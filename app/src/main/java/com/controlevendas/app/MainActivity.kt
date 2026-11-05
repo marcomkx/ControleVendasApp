@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.ReceiptLong
-import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -82,7 +81,6 @@ class MainActivity : ComponentActivity() {
                 var showTemaDialog by remember { mutableStateOf(false) }
                 var showGerenciarMesesDialog by remember { mutableStateOf(false) }
                 var mesParaExcluir by remember { mutableStateOf<String?>(null) }
-                var showConfirmImportacaoInicial by remember { mutableStateOf(false) }
 
                 var vendasImportadasDoArquivo by remember { mutableStateOf<List<Venda>>(emptyList()) }
                 var showConfirmImportacaoArquivo by remember { mutableStateOf(false) }
@@ -200,14 +198,7 @@ class MainActivity : ComponentActivity() {
                                             viewModel.verificarAtualizacao(context, manual = true)
                                         }
                                     )
-                                    DropdownMenuItem(
-                                        text = { Text("🔄 Restaurar Planilha Inicial") },
-                                        leadingIcon = { Icon(Icons.Default.Restore, contentDescription = null) },
-                                        onClick = {
-                                            menuExpanded = false
-                                            showConfirmImportacaoInicial = true
-                                        }
-                                    )
+
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -460,29 +451,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Confirmação de Restauração Inicial
-                    if (showConfirmImportacaoInicial) {
-                        AlertDialog(
-                            onDismissRequest = { showConfirmImportacaoInicial = false },
-                            title = { Text("Restaurar Planilha Inicial") },
-                            text = {
-                                Text("Deseja restaurar as vendas da planilha inicial Excel original (Maio a Novembro)? Isso substituirá os dados atuais.")
-                            },
-                            confirmButton = {
-                                Button(onClick = {
-                                    viewModel.carregarDadosPlanilha(context)
-                                    showConfirmImportacaoInicial = false
-                                }) {
-                                    Text("Sim, Restaurar")
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showConfirmImportacaoInicial = false }) {
-                                    Text("Cancelar")
-                                }
-                            }
-                        )
-                    }
+
 
                     // Notificação de Nova Versão no GitHub
                     if (novaVersao != null && !ignorarAtualizacao) {
