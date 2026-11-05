@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.controlevendas.app.data.model.Venda
 import com.controlevendas.app.data.repository.VendaRepository
-import com.controlevendas.app.data.seeder.InitialData
 import com.controlevendas.app.ui.theme.TemaModo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -225,7 +224,7 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         val salvos = prefs.getString("modo_tema", TemaModo.SISTEMA.name)
         _modoTema.value = try {
             TemaModo.valueOf(salvos ?: TemaModo.SISTEMA.name)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             TemaModo.SISTEMA
         }
     }
@@ -289,17 +288,6 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
     }
 
-    fun carregarDadosPlanilha(context: Context) {
-        viewModelScope.launch {
-            repository.deleteAll()
-            val dados = InitialData.getPlanilhaVendas()
-            repository.insertAll(dados)
-            selecionouMesManualmente = false
-            selecionouClienteMesManualmente = false
-            Toast.makeText(context, "${dados.size} vendas importadas com sucesso!", Toast.LENGTH_LONG).show()
-        }
-    }
-
     // Dados para o gráfico: resumo por mês (todos os meses, sem filtro) — mais recente primeiro
     val vendasPorMes: StateFlow<List<ResumoMes>> = todasVendas
         .map { vendas ->
@@ -347,7 +335,7 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             context.startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Toast.makeText(context, "WhatsApp não instalado ou erro ao abrir", Toast.LENGTH_SHORT).show()
         }
     }

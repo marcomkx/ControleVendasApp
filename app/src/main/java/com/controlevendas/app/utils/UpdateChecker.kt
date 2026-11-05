@@ -51,7 +51,7 @@ object UpdateChecker {
                 val currentVersionName = try {
                     val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
                     pInfo.versionName ?: "1.0"
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     "1.0"
                 }
 
@@ -63,8 +63,8 @@ object UpdateChecker {
                     )
                 }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: Exception) {
+            // ignore
         }
         return@withContext null
     }
@@ -80,7 +80,7 @@ object UpdateChecker {
                 if (lat > curr) return true
                 if (lat < curr) return false
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // fallback
         }
         return false
