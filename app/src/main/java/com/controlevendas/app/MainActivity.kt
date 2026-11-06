@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import com.controlevendas.app.data.database.AppDatabase
 import com.controlevendas.app.data.model.Venda
 import com.controlevendas.app.data.repository.VendaRepository
+import com.controlevendas.app.ui.components.GerenciarClientesProdutosDialog
 import com.controlevendas.app.ui.components.NovaVendaDialog
 import com.controlevendas.app.ui.components.PagamentoDialog
 import com.controlevendas.app.ui.screens.ClientesScreen
@@ -79,6 +80,9 @@ class MainActivity : ComponentActivity() {
                 var menuExpanded by remember { mutableStateOf(false) }
                 var showTemaDialog by remember { mutableStateOf(false) }
                 var showGerenciarMesesDialog by remember { mutableStateOf(false) }
+                var showCriarMesDialog by remember { mutableStateOf(false) }
+                var novoMesInput by remember { mutableStateOf("") }
+                var showGerenciarClientesProdutosDialog by remember { mutableStateOf(false) }
                 var mesParaExcluir by remember { mutableStateOf<String?>(null) }
 
                 var vendasImportadasDoArquivo by remember { mutableStateOf<List<Venda>>(emptyList()) }
@@ -109,12 +113,12 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val exportLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.CreateDocument("text/csv")
+                    contract = ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 ) { uri ->
                     if (uri != null) {
                         val ok = ExcelUtils.exportarVendasParaUri(context, todasVendas, uri)
                         if (ok) {
-                            Toast.makeText(context, "Planilha exportada com sucesso!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "Planilha Excel (.xlsx) salva com sucesso!", Toast.LENGTH_LONG).show()
                         } else {
                             Toast.makeText(context, "Erro ao exportar planilha.", Toast.LENGTH_SHORT).show()
                         }
@@ -156,11 +160,11 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("💾 Salvar Planilha (.csv / Excel)") },
+                                        text = { Text("💾 Salvar Planilha (.xlsx)") },
                                         leadingIcon = { Icon(Icons.Default.FileDownload, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
-                                            exportLauncher.launch("Controle_de_Vendas.csv")
+                                            exportLauncher.launch("Controle_de_Vendas.xlsx")
                                         }
                                     )
                                     HorizontalDivider()
@@ -173,11 +177,19 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("🗓️ Gerenciar / Apagar Mês") },
+                                        text = { Text("🗓️ Gerenciar Meses") },
                                         leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             showGerenciarMesesDialog = true
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("👥 Gerenciar Clientes e Peças") },
+                                        leadingIcon = { Icon(Icons.Default.Group, contentDescription = null) },
+                                        onClick = {
+                                            menuExpanded = false
+                                            showGerenciarClientesProdutosDialog = true
                                         }
                                     )
                                     HorizontalDivider()
@@ -357,14 +369,25 @@ class MainActivity : ComponentActivity() {
                     if (showGerenciarMesesDialog) {
                         AlertDialog(
                             onDismissRequest = { showGerenciarMesesDialog = false },
-                            title = { Text("🗓️ Gerenciar / Apagar Meses") },
+                            title = { Text("🗓️ Gerenciar Meses") },
                             text = {
                                 Column(modifier = Modifier.fillMaxWidth()) {
+                                    Button(
+                                        onClick = { showCriarMesDialog = true },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 12.dp)
+                                    ) {
+                                        Icon(Icons.Default.Add, contentDescription = null)
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Criar Mês em Branco")
+                                    }
+
                                     if (mesesDisponiveis.isEmpty()) {
                                         Text("Nenhum mês cadastrado no momento.", color = Color.Gray)
                                     } else {
                                         LazyColumn(
-                                            modifier = Modifier.heightIn(max = 280.dp),
+                                            modifier = Modifier.heightIn(max = 240.dp),
                                             verticalArrangement = Arrangement.spacedBy(6.dp)
                                         ) {
                                             items(mesesDisponiveis) { mes ->
@@ -390,6 +413,46 @@ class MainActivity : ComponentActivity() {
                             confirmButton = {
                                 TextButton(onClick = { showGerenciarMesesDialog = false }) {
                                     Text("Fechar")
+                                }
+                            }
+                        )
+                    }
+
+                    // Diálogo para Criar Mês em Branco
+                    if (showCriarMesDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showCriarMesDialog = false },
+                            title = { Text("Criar Mês em Branco") },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Digite a referência do novo mês (ex: JANEIRO/2027):")
+                                    OutlinedTextField(
+                                        value = novoMesInput,
+                                        onValueChange = { novoMesInput = it },
+                                        singleLine = true,
+                                        label = { Text("Mês/Ano") },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        if (novoMesInput.isNotBlank()) {
+                                            viewModel.criarMesEmBranco(novoMesInput.trim().uppercase())
+                                            novoMesInput = ""
+                                            showCriarMesDialog = false
+                                            Toast.makeText(context, "Mês em branco criado com sucesso!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    enabled = novoMesInput.isNotBlank()
+                                ) {
+                                    Text("Criar")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showCriarMesDialog = false }) {
+                                    Text("Cancelar")
                                 }
                             }
                         )
@@ -451,6 +514,21 @@ class MainActivity : ComponentActivity() {
                     }
 
 
+
+                    // Gerenciamento de Clientes e Peças
+                    if (showGerenciarClientesProdutosDialog) {
+                        GerenciarClientesProdutosDialog(
+                            clientes = clientesSugestoes,
+                            produtos = produtosSugestoes,
+                            onRenomearCliente = { antigo, novo -> viewModel.renomearCliente(antigo, novo) },
+                            onExcluirCliente = { nome -> viewModel.excluirClienteCompleto(nome) },
+                            onMesclarClientes = { origem, destino -> viewModel.mesclarClientes(origem, destino) },
+                            onRenomearProduto = { antigo, novo -> viewModel.renomearProduto(antigo, novo) },
+                            onExcluirProduto = { nome -> viewModel.excluirProdutoCompleto(nome) },
+                            onMesclarProdutos = { origem, destino -> viewModel.mesclarProdutos(origem, destino) },
+                            onDismiss = { showGerenciarClientesProdutosDialog = false }
+                        )
+                    }
 
                     // Notificação de Nova Versão no GitHub
                     if (novaVersao != null && !ignorarAtualizacao) {

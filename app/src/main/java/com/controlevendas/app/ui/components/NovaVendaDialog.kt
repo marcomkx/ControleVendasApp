@@ -44,7 +44,6 @@ fun NovaVendaDialog(
     var produto by remember { mutableStateOf(vendaEditando?.produto ?: "") }
     var valorPecaStr by remember { mutableStateOf(vendaEditando?.valorPeca?.toString() ?: "") }
     var valorPagoStr by remember { mutableStateOf(vendaEditando?.valorPago?.toString() ?: "") }
-    var margemStr by remember { mutableStateOf(vendaEditando?.margemLucroPercentual?.toString() ?: "30") }
     var mesReferencia by remember { mutableStateOf(mesInicial) }
 
     // Estados para controle de exibição do autocomplete
@@ -77,7 +76,7 @@ fun NovaVendaDialog(
 
     val valorPeca = valorPecaStr.toDoubleOrNull() ?: 0.0
     val valorPago = valorPagoStr.toDoubleOrNull() ?: 0.0
-    val margem = margemStr.toDoubleOrNull() ?: 30.0
+    val margem = 30.0
 
     val lucro = valorPeca * (margem / 100.0)
     val fornecedor = (valorPeca - lucro).coerceAtLeast(0.0)
@@ -196,53 +195,42 @@ fun NovaVendaDialog(
                     )
                 }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Campo Mês com Auto-completar e detecção automática
+                ExposedDropdownMenuBox(
+                    expanded = expandedMes,
+                    onExpandedChange = { expandedMes = it },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     OutlinedTextField(
-                        value = margemStr,
-                        onValueChange = { margemStr = it },
-                        label = { Text("Lucro %") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(0.7f),
-                        singleLine = true
+                        value = mesReferencia,
+                        onValueChange = {
+                            mesReferencia = it
+                            expandedMes = true
+                        },
+                        label = { Text("Mês/Ano") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        singleLine = true,
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMes)
+                        }
                     )
 
-                    // Campo Mês com Auto-completar e detecção automática
-                    ExposedDropdownMenuBox(
+                    ExposedDropdownMenu(
                         expanded = expandedMes,
-                        onExpandedChange = { expandedMes = it },
-                        modifier = Modifier.weight(1.3f)
+                        onDismissRequest = { expandedMes = false }
                     ) {
-                        OutlinedTextField(
-                            value = mesReferencia,
-                            onValueChange = {
-                                mesReferencia = it
-                                expandedMes = true
-                            },
-                            label = { Text("Mês/Ano") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(),
-                            singleLine = true,
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedMes)
-                            }
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = expandedMes,
-                            onDismissRequest = { expandedMes = false }
-                        ) {
-                            listaSugestoesMeses.forEach { mesSugestao ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(if (mesSugestao == mesAtualCelular) "$mesSugestao (Atual 📅)" else mesSugestao)
-                                    },
-                                    onClick = {
-                                        mesReferencia = mesSugestao
-                                        expandedMes = false
-                                    }
-                                )
-                            }
+                        listaSugestoesMeses.forEach { mesSugestao ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(if (mesSugestao == mesAtualCelular) "$mesSugestao (Atual 📅)" else mesSugestao)
+                                },
+                                onClick = {
+                                    mesReferencia = mesSugestao
+                                    expandedMes = false
+                                }
+                            )
                         }
                     }
                 }

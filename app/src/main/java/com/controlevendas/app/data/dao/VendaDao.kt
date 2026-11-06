@@ -62,6 +62,21 @@ interface VendaDao {
     @Query("DELETE FROM vendas WHERE LOWER(TRIM(cliente)) = LOWER(TRIM(:nomeCliente))")
     suspend fun deleteVendasPorCliente(nomeCliente: String)
 
+    @Query("UPDATE vendas SET cliente = :novoNome WHERE LOWER(TRIM(cliente)) = LOWER(TRIM(:antigoNome))")
+    suspend fun atualizarNomeCliente(antigoNome: String, novoNome: String)
+
+    @Query("UPDATE vendas SET produto = :novoNome WHERE LOWER(TRIM(produto)) = LOWER(TRIM(:antigoNome))")
+    suspend fun atualizarNomeProduto(antigoNome: String, novoNome: String)
+
+    @Query("DELETE FROM vendas WHERE LOWER(TRIM(produto)) = LOWER(TRIM(:nomeProduto))")
+    suspend fun deleteVendasPorProduto(nomeProduto: String)
+
+    @Query("UPDATE vendas SET cliente = :destino WHERE LOWER(TRIM(cliente)) = LOWER(TRIM(:origem))")
+    suspend fun mesclarClientes(origem: String, destino: String)
+
+    @Query("UPDATE vendas SET produto = :destino WHERE LOWER(TRIM(produto)) = LOWER(TRIM(:origem))")
+    suspend fun mesclarProdutos(origem: String, destino: String)
+
     @Query("DELETE FROM vendas WHERE LOWER(TRIM(mesReferencia)) = LOWER(TRIM(:mes))")
     suspend fun deleteVendasPorMes(mes: String)
 

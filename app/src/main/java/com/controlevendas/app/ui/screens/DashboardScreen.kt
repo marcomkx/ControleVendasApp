@@ -44,8 +44,6 @@ fun DashboardScreen(viewModel: VendasViewModel) {
     val vendasPorMes by viewModel.vendasPorMes.collectAsState()
     val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
 
-    // Último mês disponível (mais recente) para o gráfico de barras
-    val ultimoMes = vendasPorMes.firstOrNull()
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -161,19 +159,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
             }
         }
 
-        // Gráfico 1: Barra do último mês
-        if (ultimoMes != null) {
-            item {
-                GraficoBarraUltimoMes(
-                    mes = ultimoMes.mes,
-                    totalVendido = ultimoMes.totalVendido,
-                    totalPago = ultimoMes.totalPago,
-                    formatador = formatador
-                )
-            }
-        }
-
-        // Gráfico 2: Donut - Vendido vs Recebido
+        // Gráfico 1: Donut - Vendido vs Recebido
         item {
             val totalVendido = metricas.totalVendido
             val totalPago = metricas.totalPago
@@ -184,6 +170,16 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                     totalVendido = totalVendido,
                     totalPago = totalPago,
                     totalPendente = totalPendente,
+                    formatador = formatador
+                )
+            }
+        }
+
+        // Gráfico 2: Comparação Mês Passado vs Mês Atual
+        if (vendasPorMes.isNotEmpty()) {
+            item {
+                GraficoComparacaoMeses(
+                    vendasPorMes = vendasPorMes,
                     formatador = formatador
                 )
             }
@@ -217,28 +213,28 @@ fun DashboardScreen(viewModel: VendasViewModel) {
 
 // ─── Gráfico 1: Barra horizontal do último mês ───────────────────────────────
 
+// ─── Gráfico 1: Comparação Mês Passado vs Mês Atual ───────────────────────────
+
 @Composable
-fun GraficoBarraUltimoMes(
-    mes: String,
-    totalVendido: Double,
-    totalPago: Double,
+fun GraficoComparacaoMeses(
+    vendasPorMes: List<ResumoMes>,
     formatador: NumberFormat
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val secondaryColor = MaterialTheme.colorScheme.secondary
+    if (vendasPorMes.isEmpty()) return
+
+    val mesAtual = vendasPorMes.getOrNull(0)
+    val mesPassado = vendasPorMes.getOrNull(1)
+
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
     val onSurface = MaterialTheme.colorScheme.onSurface
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val secondaryColor = MaterialTheme.colorScheme.secondary
 
     val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(mes, totalVendido) {
+    LaunchedEffect(vendasPorMes) {
         animProgress.snapTo(0f)
         animProgress.animateTo(1f, animationSpec = tween(durationMillis = 1000))
     }
-
-    val nomeMes = mes.substringBefore("/").trim()
-        .replaceFirstChar { it.uppercaseChar() }
-    val anoMes = mes.substringAfter("/").trim()
-    val tituloMes = "$nomeMes / $anoMes"
 
     Card(
         modifier = Modifier
@@ -249,104 +245,162 @@ fun GraficoBarraUltimoMes(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "📅 Último Mês: $tituloMes",
+                text = "📊 Comparação: Mês Passado vs Mês Atual",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = onSurface
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(90.dp)
-            ) {
-                val barH = 30.dp.toPx()
-                val cornerR = 8.dp.toPx()
-                val labelPx = 80.dp.toPx()
-                val barArea = size.width - labelPx - 8.dp.toPx()
-                val maxV = totalVendido.coerceAtLeast(1.0)
-
-                // Linha 1: Total Vendido
-                val y1 = 0f
-
-                drawContext.canvas.nativeCanvas.drawText(
-                    "Vendido",
-                    0f,
-                    y1 + barH / 2f + 5.dp.toPx(),
-                    android.graphics.Paint().apply {
-                        color = onSurface.copy(alpha = 0.75f).toArgb()
-                        textSize = 12.sp.toPx()
-                        isAntiAlias = true
-                        typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    }
+            if (mesPassado == null) {
+                Text(
+                    text = "Cadastre vendas em mais de um mês para visualizar a comparação entre o mês passado e o mês atual.",
+                    fontSize = 12.sp,
+                    color = onSurface.copy(alpha = 0.7f)
                 )
-                drawRoundRect(
-                    color = primaryColor.copy(alpha = 0.12f),
-                    topLeft = Offset(labelPx, y1),
-                    size = Size(barArea, barH),
-                    cornerRadius = CornerRadius(cornerR)
-                )
-                val w1 = (barArea * animProgress.value).toFloat()
-                drawRoundRect(
-                    color = primaryColor.copy(alpha = 0.85f),
-                    topLeft = Offset(labelPx, y1),
-                    size = Size(w1, barH),
-                    cornerRadius = CornerRadius(cornerR)
-                )
-                drawContext.canvas.nativeCanvas.drawText(
-                    formatador.format(totalVendido),
-                    labelPx + w1 + 6.dp.toPx(),
-                    y1 + barH / 2f + 5.dp.toPx(),
-                    android.graphics.Paint().apply {
-                        color = primaryColor.toArgb()
-                        textSize = 10.sp.toPx()
-                        isAntiAlias = true
-                        typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    }
-                )
-
-                // Linha 2: Total Pago
-                val y2 = barH + 20.dp.toPx()
-                val recebidoRatio = (totalPago / maxV).coerceIn(0.0, 1.0)
-
-                drawContext.canvas.nativeCanvas.drawText(
-                    "Recebido",
-                    0f,
-                    y2 + barH / 2f + 5.dp.toPx(),
-                    android.graphics.Paint().apply {
-                        color = onSurface.copy(alpha = 0.75f).toArgb()
-                        textSize = 12.sp.toPx()
-                        isAntiAlias = true
-                        typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    }
-                )
-                drawRoundRect(
-                    color = Color(0xFF004D40).copy(alpha = 0.12f),
-                    topLeft = Offset(labelPx, y2),
-                    size = Size(barArea, barH),
-                    cornerRadius = CornerRadius(cornerR)
-                )
-                val w2 = (barArea * recebidoRatio * animProgress.value).toFloat()
-                if (w2 > cornerR) {
-                    drawRoundRect(
-                        color = Color(0xFF00897B).copy(alpha = 0.85f),
-                        topLeft = Offset(labelPx, y2),
-                        size = Size(w2, barH),
-                        cornerRadius = CornerRadius(cornerR)
+                Spacer(modifier = Modifier.height(8.dp))
+                if (mesAtual != null) {
+                    val nomeAtual = mesAtual.mes.substringBefore("/").trim().replaceFirstChar { it.uppercaseChar() }
+                    val anoAtual = mesAtual.mes.substringAfter("/").trim()
+                    Text(
+                        text = "$nomeAtual/$anoAtual (Atual): ${formatador.format(mesAtual.totalVendido)}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = primaryColor
                     )
                 }
-                drawContext.canvas.nativeCanvas.drawText(
-                    formatador.format(totalPago),
-                    labelPx + w2 + 6.dp.toPx(),
-                    y2 + barH / 2f + 5.dp.toPx(),
-                    android.graphics.Paint().apply {
-                        color = Color(0xFF004D40).toArgb()
-                        textSize = 10.sp.toPx()
-                        isAntiAlias = true
-                        typeface = android.graphics.Typeface.DEFAULT_BOLD
+            } else {
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(90.dp)
+                ) {
+                    val barH = 30.dp.toPx()
+                    val cornerR = 8.dp.toPx()
+                    val labelPx = 95.dp.toPx()
+                    val barArea = size.width - labelPx - 8.dp.toPx()
+                    
+                    val maxV = maxOf(mesAtual?.totalVendido ?: 0.0, mesPassado.totalVendido, 1.0)
+
+                    val nomePassado = mesPassado.mes.substringBefore("/").trim().replaceFirstChar { it.uppercaseChar() } + "/" + mesPassado.mes.substringAfter("/").trim()
+                    val nomeAtual = (mesAtual?.mes?.substringBefore("/")?.trim()?.replaceFirstChar { it.uppercaseChar() } ?: "") + "/" + (mesAtual?.mes?.substringAfter("/")?.trim() ?: "")
+
+                    fun drawBarValue(
+                        canvas: android.graphics.Canvas,
+                        valor: Double,
+                        w: Float,
+                        y: Float,
+                        barColor: Color
+                    ) {
+                        val textVal = formatador.format(valor)
+                        val basePaint = android.graphics.Paint().apply {
+                            textSize = 10.sp.toPx()
+                            isAntiAlias = true
+                            typeface = android.graphics.Typeface.DEFAULT_BOLD
+                        }
+                        val textWidth = basePaint.measureText(textVal)
+                        val spaceRight = labelPx + barArea - (labelPx + w)
+
+                        if (w > textWidth + 24.dp.toPx() && spaceRight > -textWidth) {
+                            // Desenha dentro da barra em branco
+                            canvas.drawText(
+                                textVal,
+                                labelPx + w - 8.dp.toPx(),
+                                y + barH / 2f + 5.dp.toPx(),
+                                android.graphics.Paint(basePaint).apply {
+                                    color = android.graphics.Color.WHITE
+                                    textAlign = android.graphics.Paint.Align.RIGHT
+                                }
+                            )
+                        } else {
+                            // Desenha fora se houver espaço, ou dentro se estiver muito no limite
+                            if (spaceRight < textWidth + 8.dp.toPx()) {
+                                canvas.drawText(
+                                    textVal,
+                                    labelPx + w - 8.dp.toPx(),
+                                    y + barH / 2f + 5.dp.toPx(),
+                                    android.graphics.Paint(basePaint).apply {
+                                        color = android.graphics.Color.WHITE
+                                        textAlign = android.graphics.Paint.Align.RIGHT
+                                    }
+                                )
+                            } else {
+                                canvas.drawText(
+                                    textVal,
+                                    labelPx + w + 6.dp.toPx(),
+                                    y + barH / 2f + 5.dp.toPx(),
+                                    android.graphics.Paint(basePaint).apply {
+                                        color = barColor.toArgb()
+                                        textAlign = android.graphics.Paint.Align.LEFT
+                                    }
+                                )
+                            }
+                        }
                     }
-                )
+
+                    // Linha 1: Mês Passado
+                    val y1 = 0f
+                    drawContext.canvas.nativeCanvas.drawText(
+                        nomePassado,
+                        0f,
+                        y1 + barH / 2f + 5.dp.toPx(),
+                        android.graphics.Paint().apply {
+                            color = onSurface.copy(alpha = 0.75f).toArgb()
+                            textSize = 11.sp.toPx()
+                            isAntiAlias = true
+                            typeface = android.graphics.Typeface.DEFAULT_BOLD
+                        }
+                    )
+                    drawRoundRect(
+                        color = secondaryColor.copy(alpha = 0.12f),
+                        topLeft = Offset(labelPx, y1),
+                        size = Size(barArea, barH),
+                        cornerRadius = CornerRadius(cornerR)
+                    )
+                    val ratio1 = (mesPassado.totalVendido / maxV).coerceIn(0.0, 1.0)
+                    val w1 = (barArea * ratio1 * animProgress.value).toFloat()
+                    if (w1 > cornerR) {
+                        drawRoundRect(
+                            color = secondaryColor.copy(alpha = 0.85f),
+                            topLeft = Offset(labelPx, y1),
+                            size = Size(w1, barH),
+                            cornerRadius = CornerRadius(cornerR)
+                        )
+                    }
+                    drawBarValue(drawContext.canvas.nativeCanvas, mesPassado.totalVendido, w1, y1, secondaryColor)
+
+                    // Linha 2: Mês Atual
+                    val y2 = barH + 20.dp.toPx()
+                    val ratio2 = if (mesAtual != null) (mesAtual.totalVendido / maxV).coerceIn(0.0, 1.0) else 0.0
+
+                    drawContext.canvas.nativeCanvas.drawText(
+                        nomeAtual,
+                        0f,
+                        y2 + barH / 2f + 5.dp.toPx(),
+                        android.graphics.Paint().apply {
+                            color = onSurface.copy(alpha = 0.75f).toArgb()
+                            textSize = 11.sp.toPx()
+                            isAntiAlias = true
+                            typeface = android.graphics.Typeface.DEFAULT_BOLD
+                        }
+                    )
+                    drawRoundRect(
+                        color = primaryColor.copy(alpha = 0.12f),
+                        topLeft = Offset(labelPx, y2),
+                        size = Size(barArea, barH),
+                        cornerRadius = CornerRadius(cornerR)
+                    )
+                    val w2 = (barArea * ratio2 * animProgress.value).toFloat()
+                    if (w2 > cornerR) {
+                        drawRoundRect(
+                            color = primaryColor.copy(alpha = 0.85f),
+                            topLeft = Offset(labelPx, y2),
+                            size = Size(w2, barH),
+                            cornerRadius = CornerRadius(cornerR)
+                        )
+                    }
+                    drawBarValue(drawContext.canvas.nativeCanvas, mesAtual?.totalVendido ?: 0.0, w2, y2, primaryColor)
+                }
             }
         }
     }

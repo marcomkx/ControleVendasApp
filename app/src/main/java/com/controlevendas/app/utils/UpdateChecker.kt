@@ -16,7 +16,7 @@ data class GitHubRelease(
 object UpdateChecker {
     // ⚠️ ATENÇÃO: Substitua pelo seu usuário e nome do repositório no GitHub
     // Exemplo: "seu-usuario/ControleVendasApp"
-    private const val GITHUB_REPO = "seu-usuario/ControleVendasApp"
+    private const val GITHUB_REPO = "marcomkx/ControleVendasApp"
 
     suspend fun checkForUpdate(context: Context): GitHubRelease? = withContext(Dispatchers.IO) {
         try {

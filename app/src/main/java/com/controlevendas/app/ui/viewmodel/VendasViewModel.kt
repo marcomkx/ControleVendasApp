@@ -111,6 +111,7 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         _filtroStatus
     ) { vendas, mes, query, status ->
         vendas.filter { venda ->
+            if (venda.cliente == "— MÊS EM BRANCO —") return@filter false
             val matchMes = mes == null || mes == "Todos" || venda.mesReferencia.equals(mes, ignoreCase = true)
             val matchQuery = query.isBlank() ||
                     venda.cliente.contains(query, ignoreCase = true) ||
@@ -128,11 +129,11 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         todasVendas,
         _filtroMes
     ) { vendas, mes ->
-        val vendasDoMes = if (mes == null || mes == "Todos") {
+        val vendasDoMes = (if (mes == null || mes == "Todos") {
             vendas
         } else {
             vendas.filter { it.mesReferencia.equals(mes, ignoreCase = true) }
-        }
+        }).filter { it.cliente != "— MÊS EM BRANCO —" }
 
         var lucro = 0.0
         var vendido = 0.0
@@ -280,6 +281,47 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         viewModelScope.launch {
             repository.deleteVendasPorCliente(nomeCliente)
         }
+    }
+
+    fun criarMesEmBranco(mes: String) {
+        viewModelScope.launch {
+            val vendaPlaceholder = Venda(
+                cliente = "— MÊS EM BRANCO —",
+                produto = "—",
+                valorPeca = 0.0,
+                valorPago = 0.0,
+                margemLucroPercentual = 30.0,
+                lucro = 0.0,
+                mesReferencia = mes.trim().uppercase(),
+                status = "Quitado"
+            )
+            repository.insert(vendaPlaceholder)
+            _filtroMes.value = mes.trim().uppercase()
+        }
+    }
+
+    fun renomearCliente(antigo: String, novo: String) {
+        viewModelScope.launch { repository.atualizarNomeCliente(antigo, novo) }
+    }
+
+    fun excluirClienteCompleto(nome: String) {
+        viewModelScope.launch { repository.deleteVendasPorCliente(nome) }
+    }
+
+    fun mesclarClientes(origem: String, destino: String) {
+        viewModelScope.launch { repository.mesclarClientes(origem, destino) }
+    }
+
+    fun renomearProduto(antigo: String, novo: String) {
+        viewModelScope.launch { repository.atualizarNomeProduto(antigo, novo) }
+    }
+
+    fun excluirProdutoCompleto(nome: String) {
+        viewModelScope.launch { repository.deleteVendasPorProduto(nome) }
+    }
+
+    fun mesclarProdutos(origem: String, destino: String) {
+        viewModelScope.launch { repository.mesclarProdutos(origem, destino) }
     }
 
     fun excluirMes(mes: String) {

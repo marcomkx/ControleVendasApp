@@ -9,6 +9,8 @@ room = "2.7.0"
 ksp = "2.3.6"
 materialIconsExtended = "1.7.5"
 navigationCompose = "2.8.3"
+poiVersion = "5.2.3"
+desugarVersion = "2.0.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -26,6 +28,8 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+poiOoxml = { group = "org.apache.poi", name = "poi-ooxml", version.ref = "poiVersion" }
+desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

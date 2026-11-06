@@ -24,6 +24,16 @@ class VendaRepository(private val vendaDao: VendaDao) {
 
     suspend fun deleteVendasPorCliente(nomeCliente: String) = vendaDao.deleteVendasPorCliente(nomeCliente)
 
+    suspend fun atualizarNomeCliente(antigo: String, novo: String) = vendaDao.atualizarNomeCliente(antigo, novo)
+
+    suspend fun atualizarNomeProduto(antigo: String, novo: String) = vendaDao.atualizarNomeProduto(antigo, novo)
+
+    suspend fun deleteVendasPorProduto(produto: String) = vendaDao.deleteVendasPorProduto(produto)
+
+    suspend fun mesclarClientes(origem: String, destino: String) = vendaDao.mesclarClientes(origem, destino)
+
+    suspend fun mesclarProdutos(origem: String, destino: String) = vendaDao.mesclarProdutos(origem, destino)
+
     suspend fun deleteVendasPorMes(mes: String) = vendaDao.deleteVendasPorMes(mes)
 
     suspend fun deleteAll() = vendaDao.deleteAll()
