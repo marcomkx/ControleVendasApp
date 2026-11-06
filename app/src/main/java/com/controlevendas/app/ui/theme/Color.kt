@@ -27,3 +27,11 @@ val StatusPendenteBg = Color(0xFFFFEBEE)
 
 val StatusLucro = Color(0xFFAD1457)
 val StatusFornecedor = Color(0xFF4A148C)
+
+// Paleta Modo Escuro (Sofisticada, tom grafite/vinho escuro com alto contraste)
+val BackgroundDark = Color(0xFF171214)
+val SurfaceDark = Color(0xFF241C1E)
+val SurfaceVariantDark = Color(0xFF382B2F)
+val OnSurfaceDark = Color(0xFFF9ECEF)
+val OnSurfaceVariantDark = Color(0xFFE0C4CC)
+val PrimaryDark = Color(0xFFEC407A)

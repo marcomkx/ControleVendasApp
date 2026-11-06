@@ -29,10 +29,19 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = RosePrimary,
+    primary = PrimaryDark,
     onPrimary = RoseOnPrimary,
+    primaryContainer = RoseSecondary,
+    onPrimaryContainer = RoseSecondaryContainer,
     secondary = RoseSecondary,
-    tertiary = RoseTertiary
+    onSecondary = RoseOnSecondary,
+    tertiary = RoseTertiary,
+    background = BackgroundDark,
+    surface = SurfaceDark,
+    surfaceVariant = SurfaceVariantDark,
+    onBackground = OnSurfaceDark,
+    onSurface = OnSurfaceDark,
+    onSurfaceVariant = OnSurfaceVariantDark
 )
 
 @Composable
