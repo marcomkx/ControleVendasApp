@@ -19,7 +19,9 @@ fun PagamentoDialog(
     onConfirmarPagamento: (Double) -> Unit,
     onQuitarTotal: () -> Unit
 ) {
-    var valorStr by remember { mutableStateOf(venda.saldoDevedor.toString()) }
+    var valorStr by remember {
+        mutableStateOf(String.format(Locale("pt", "BR"), "%.2f", venda.saldoDevedor).replace(".", ","))
+    }
     val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
 
     AlertDialog(
@@ -52,7 +54,7 @@ fun PagamentoDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    val v = valorStr.toDoubleOrNull()
+                    val v = valorStr.replace(",", ".").toDoubleOrNull()
                     if (v != null && v > 0) {
                         onConfirmarPagamento(v)
                     }

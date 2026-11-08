@@ -153,7 +153,6 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     DropdownMenuItem(
                                         text = { Text("📤 Exportar para Google Planilhas") },
-                                        leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             ExcelUtils.abrirNoGooglePlanilhasOuCompartilhar(context, todasVendas)
@@ -161,7 +160,6 @@ class MainActivity : ComponentActivity() {
                                     )
                                     DropdownMenuItem(
                                         text = { Text("💾 Salvar Planilha (.xlsx)") },
-                                        leadingIcon = { Icon(Icons.Default.FileDownload, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             exportLauncher.launch("Controle_de_Vendas.xlsx")
@@ -170,7 +168,6 @@ class MainActivity : ComponentActivity() {
                                     HorizontalDivider()
                                     DropdownMenuItem(
                                         text = { Text("📥 Importar Planilha do Dispositivo") },
-                                        leadingIcon = { Icon(Icons.Default.FileUpload, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             filePickerLauncher.launch("*/*")
@@ -178,7 +175,6 @@ class MainActivity : ComponentActivity() {
                                     )
                                     DropdownMenuItem(
                                         text = { Text("🗓️ Gerenciar Meses") },
-                                        leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             showGerenciarMesesDialog = true
@@ -186,7 +182,6 @@ class MainActivity : ComponentActivity() {
                                     )
                                     DropdownMenuItem(
                                         text = { Text("👥 Gerenciar Clientes e Peças") },
-                                        leadingIcon = { Icon(Icons.Default.Group, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             showGerenciarClientesProdutosDialog = true
@@ -195,7 +190,6 @@ class MainActivity : ComponentActivity() {
                                     HorizontalDivider()
                                     DropdownMenuItem(
                                         text = { Text("🎨 Tema (Claro / Escuro)") },
-                                        leadingIcon = { Icon(Icons.Default.Palette, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             showTemaDialog = true
@@ -203,7 +197,6 @@ class MainActivity : ComponentActivity() {
                                     )
                                     DropdownMenuItem(
                                         text = { Text("🔄 Verificar Atualizações") },
-                                        leadingIcon = { Icon(Icons.Default.Insights, contentDescription = null) },
                                         onClick = {
                                             menuExpanded = false
                                             viewModel.verificarAtualizacao(context, manual = true)

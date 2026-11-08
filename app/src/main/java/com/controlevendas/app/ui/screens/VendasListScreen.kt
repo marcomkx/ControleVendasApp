@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Payment
@@ -54,6 +55,13 @@ fun VendasListScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             placeholder = { Text("Buscar por cliente ou peça...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Pesquisar") },
+            trailingIcon = {
+                if (pesquisa.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.setPesquisa("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpar")
+                    }
+                }
+            },
             singleLine = true,
             shape = RoundedCornerShape(12.dp)
         )

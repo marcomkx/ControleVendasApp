@@ -26,6 +26,7 @@ fun GerenciarClientesProdutosDialog(
     onDismiss: () -> Unit
 ) {
     var abaSelecionada by remember { mutableIntStateOf(0) } // 0: Clientes, 1: Produtos
+    var textoBusca by remember { mutableStateOf("") }
 
     // Estados de Diálogos Secundários
     var itemSelecionadoParaAcao by remember { mutableStateOf<String?>(null) }
@@ -42,24 +43,57 @@ fun GerenciarClientesProdutosDialog(
                 TabRow(selectedTabIndex = abaSelecionada) {
                     Tab(
                         selected = abaSelecionada == 0,
-                        onClick = { abaSelecionada = 0 },
+                        onClick = {
+                            abaSelecionada = 0
+                            textoBusca = ""
+                        },
                         text = { Text("👥 Clientes (${clientes.size})") }
                     )
                     Tab(
                         selected = abaSelecionada == 1,
-                        onClick = { abaSelecionada = 1 },
+                        onClick = {
+                            abaSelecionada = 1
+                            textoBusca = ""
+                        },
                         text = { Text("👗 Peças (${produtos.size})") }
                     )
                 }
+
+                // Campo de Busca
+                OutlinedTextField(
+                    value = textoBusca,
+                    onValueChange = { textoBusca = it },
+                    placeholder = { Text(if (abaSelecionada == 0) "Buscar cliente..." else "Buscar peça...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+                    trailingIcon = {
+                        if (textoBusca.isNotEmpty()) {
+                            IconButton(onClick = { textoBusca = "" }) {
+                                Icon(Icons.Default.Close, contentDescription = "Limpar")
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         text = {
             Box(modifier = Modifier.fillMaxWidth().height(350.dp)) {
-                val listaAtual = if (abaSelecionada == 0) clientes else produtos
+                val listaBase = if (abaSelecionada == 0) clientes else produtos
+                val listaAtual = remember(listaBase, textoBusca) {
+                    if (textoBusca.isBlank()) {
+                        listaBase
+                    } else {
+                        listaBase.filter { it.contains(textoBusca, ignoreCase = true) }
+                    }
+                }
 
                 if (listaAtual.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Nenhum item cadastrado.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            text = if (textoBusca.isBlank()) "Nenhum item cadastrado." else "Nenhum resultado encontrado.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 } else {
                     LazyColumn(

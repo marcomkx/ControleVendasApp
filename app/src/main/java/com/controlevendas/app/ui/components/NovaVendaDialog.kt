@@ -42,8 +42,16 @@ fun NovaVendaDialog(
 
     var cliente by remember { mutableStateOf(vendaEditando?.cliente ?: "") }
     var produto by remember { mutableStateOf(vendaEditando?.produto ?: "") }
-    var valorPecaStr by remember { mutableStateOf(vendaEditando?.valorPeca?.toString() ?: "") }
-    var valorPagoStr by remember { mutableStateOf(vendaEditando?.valorPago?.toString() ?: "") }
+    var valorPecaStr by remember {
+        mutableStateOf(
+            vendaEditando?.valorPeca?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
+        )
+    }
+    var valorPagoStr by remember {
+        mutableStateOf(
+            vendaEditando?.valorPago?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
+        )
+    }
     var mesReferencia by remember { mutableStateOf(mesInicial) }
 
     // Estados para controle de exibição do autocomplete
@@ -74,8 +82,8 @@ fun NovaVendaDialog(
         set.toList()
     }
 
-    val valorPeca = valorPecaStr.toDoubleOrNull() ?: 0.0
-    val valorPago = valorPagoStr.toDoubleOrNull() ?: 0.0
+    val valorPeca = valorPecaStr.replace(",", ".").toDoubleOrNull() ?: 0.0
+    val valorPago = valorPagoStr.replace(",", ".").toDoubleOrNull() ?: 0.0
     val margem = 30.0
 
     val lucro = valorPeca * (margem / 100.0)

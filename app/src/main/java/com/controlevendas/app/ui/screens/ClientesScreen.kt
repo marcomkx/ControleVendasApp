@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -53,6 +54,13 @@ fun ClientesScreen(viewModel: VendasViewModel) {
                 .padding(horizontal = 16.dp, vertical = 6.dp),
             placeholder = { Text("Buscar cliente pelo nome...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+            trailingIcon = {
+                if (pesquisa.isNotEmpty()) {
+                    IconButton(onClick = { viewModel.setPesquisa("") }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpar")
+                    }
+                }
+            },
             singleLine = true,
             shape = RoundedCornerShape(12.dp)
         )
