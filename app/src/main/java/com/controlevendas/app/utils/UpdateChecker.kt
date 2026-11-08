@@ -1,10 +1,20 @@
 package com.controlevendas.app.utils
 
+import android.app.DownloadManager
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.Uri
+import android.os.Environment
 import android.util.Log
+import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -81,6 +91,88 @@ object UpdateChecker {
             Log.e(TAG, "Exceção ao verificar atualizações", e)
         }
         return@withContext null
+    }
+
+    fun baixarEInstalarApk(context: Context, release: GitHubRelease) {
+        val downloadUrl = release.apkUrl ?: release.releaseUrl
+        if (!downloadUrl.endsWith(".apk", ignoreCase = true)) {
+            // Se por algum motivo não for um link direto de APK, abre no navegador
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            return
+        }
+
+        try {
+            val fileName = "ControleVendas_v${release.versionName}.apk"
+            val destination = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            val file = File(destination, fileName)
+            if (file.exists()) {
+                file.delete()
+            }
+
+            val request = DownloadManager.Request(Uri.parse(downloadUrl)).apply {
+                setTitle("Atualização v${release.versionName}")
+                setDescription("Baixando atualização do Controle de Vendas...")
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                setDestinationUri(Uri.fromFile(file))
+                setMimeType("application/vnd.android.package-archive")
+            }
+
+            val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val downloadId = downloadManager.enqueue(request)
+
+            Toast.makeText(context, "Baixando atualização v${release.versionName} em segundo plano...", Toast.LENGTH_LONG).show()
+
+            val onComplete = object : BroadcastReceiver() {
+                override fun onReceive(c: Context, intent: Intent) {
+                    val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
+                    if (id == downloadId) {
+                        try {
+                            context.unregisterReceiver(this)
+                        } catch (_: Exception) {}
+
+                        instalarApk(context, file)
+                    }
+                }
+            }
+
+            ContextCompat.registerReceiver(
+                context,
+                onComplete,
+                IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro no DownloadManager, abrindo no navegador", e)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    private fun instalarApk(context: Context, file: File) {
+        try {
+            if (!file.exists()) return
+
+            val apkUri: Uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(apkUri, "application/vnd.android.package-archive")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
+            }
+
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao iniciar instalador do APK", e)
+            Toast.makeText(context, "Download concluído! Verifique a pasta Downloads para instalar.", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun isVersionNewer(current: String, latest: String): Boolean {

@@ -533,13 +533,10 @@ class MainActivity : ComponentActivity() {
                             },
                             confirmButton = {
                                 Button(onClick = {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(novaVersao!!.apkUrl ?: novaVersao!!.releaseUrl)).apply {
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                    }
-                                    context.startActivity(intent)
+                                    com.controlevendas.app.utils.UpdateChecker.baixarEInstalarApk(context, novaVersao!!)
                                     ignorarAtualizacao = true
                                 }) {
-                                    Text("Baixar Atualização")
+                                    Text("Baixar e Instalar")
                                 }
                             },
                             dismissButton = {
