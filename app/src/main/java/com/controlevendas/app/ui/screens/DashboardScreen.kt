@@ -52,11 +52,6 @@ fun DashboardScreen(viewModel: VendasViewModel) {
     ) {
         item {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Resumo Geral de Valores",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
 
             // Seletor de Meses
             val scrollState = rememberScrollState()
@@ -82,7 +77,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                 FilterChip(
                     selected = filtroMes == "Todos",
                     onClick = { viewModel.setFiltroMes("Todos") },
-                    label = { Text("📅 Todos os Meses") },
+                    label = { Text("Todos os Meses") },
                     colors = chipColors
                 )
             }
@@ -96,7 +91,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MetricaCard(
-                        titulo = "💰 Lucro Total",
+                        titulo = "Lucro Total",
                         valor = formatador.format(metricas.lucroTotal),
                         icone = Icons.Default.AttachMoney,
                         containerColor = Color(0xFFFCE4EC),
@@ -104,7 +99,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                         modifier = Modifier.weight(1f)
                     )
                     MetricaCard(
-                        titulo = "⏳ Total Vendido",
+                        titulo = "Total Vendido",
                         valor = formatador.format(metricas.totalVendido),
                         icone = Icons.Default.Inventory2,
                         containerColor = Color(0xFFF8BBD0),
@@ -118,7 +113,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MetricaCard(
-                        titulo = "🏭 p/ Fornecedor",
+                        titulo = "p/ Fornecedor",
                         valor = formatador.format(metricas.totalFornecedor),
                         icone = Icons.Default.LocalShipping,
                         containerColor = Color(0xFFEDE7F6),
@@ -126,7 +121,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                         modifier = Modifier.weight(1f)
                     )
                     MetricaCard(
-                        titulo = "⚠️ A Receber (Pendente)",
+                        titulo = "A Receber (Pendente)",
                         valor = formatador.format(metricas.totalPendente),
                         icone = Icons.Default.HourglassTop,
                         containerColor = Color(0xFFFFF3E0),
@@ -140,7 +135,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     MetricaCard(
-                        titulo = "📋 Total de Peças",
+                        titulo = "Total de Peças",
                         valor = "${metricas.totalPecas} un.",
                         icone = Icons.Default.Inventory2,
                         containerColor = Color(0xFFF5F5F5),
@@ -148,7 +143,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                         modifier = Modifier.weight(1f)
                     )
                     MetricaCard(
-                        titulo = "✅ Total Já Pago",
+                        titulo = "Total Já Pago",
                         valor = formatador.format(metricas.totalPago),
                         icone = Icons.Default.CheckCircle,
                         containerColor = Color(0xFFE0F2F1),
@@ -195,7 +190,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("💡 Dica de Gestão:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text("Dica de Gestão:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Text(
                         "Para consultar ou registrar recebimentos individuais, acerte os pagamentos na aba 'Vendas' ou verifique o saldo consolidado devedor na aba 'Clientes'.",
                         fontSize = 13.sp,
@@ -245,7 +240,7 @@ fun GraficoComparacaoMeses(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "📊 Comparação: Mês Passado vs Mês Atual",
+                text = "Comparação: Mês Passado vs Mês Atual",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = onSurface
@@ -441,7 +436,7 @@ fun GraficoDonutVendidoRecebido(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "🍩 Vendas vs Recebimentos",
+                text = "Vendas vs Recebimentos",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = onSurface
@@ -530,20 +525,20 @@ fun GraficoDonutVendidoRecebido(
                 ) {
                     LegendaItem(
                         cor = colorPago,
-                        label = "✅ Recebido",
+                        label = "Recebido",
                         valor = formatador.format(totalPago),
                         percentual = "${(percPago * 100).toInt()}%"
                     )
                     LegendaItem(
                         cor = colorPendente,
-                        label = "⚠️ Pendente",
+                        label = "Pendente",
                         valor = formatador.format(totalPendente),
                         percentual = "${(percPendente * 100).toInt()}%"
                     )
                     HorizontalDivider(color = onSurface.copy(alpha = 0.1f))
                     LegendaItem(
                         cor = primaryColor,
-                        label = "🛍️ Total Vendido",
+                        label = "Total Vendido",
                         valor = formatador.format(totalVendido),
                         percentual = "100%"
                     )

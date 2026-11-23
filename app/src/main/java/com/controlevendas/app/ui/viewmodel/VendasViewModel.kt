@@ -330,6 +330,49 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
     }
 
+    fun registrarPagamentoCliente(clienteNome: String, valorRecebido: Double) {
+        viewModelScope.launch {
+            val clienteResumo = clientesAgrupados.value.find { it.nome.equals(clienteNome, ignoreCase = true) }
+            if (clienteResumo != null) {
+                var restante = valorRecebido
+                val vendasPendentes = clienteResumo.vendas.filter { !it.isQuitado }.sortedBy { it.id }
+                for (venda in vendasPendentes) {
+                    if (restante <= 0.0001) break
+                    val falta = venda.saldoDevedor
+                    val pagamentoParaEstaVenda = if (restante >= falta) falta else restante
+                    restante -= pagamentoParaEstaVenda
+
+                    val novoPago = venda.valorPago + pagamentoParaEstaVenda
+                    val novoSaldo = (venda.valorPeca - novoPago).coerceAtLeast(0.0)
+                    val st = if (novoSaldo <= 0.001) "Quitado" else "Pendente"
+                    val atualizada = venda.copy(
+                        valorPago = novoPago,
+                        saldoDevedor = novoSaldo,
+                        status = st
+                    )
+                    repository.update(atualizada)
+                }
+            }
+        }
+    }
+
+    fun quitarCliente(clienteNome: String) {
+        viewModelScope.launch {
+            val clienteResumo = clientesAgrupados.value.find { it.nome.equals(clienteNome, ignoreCase = true) }
+            if (clienteResumo != null) {
+                val vendasPendentes = clienteResumo.vendas.filter { !it.isQuitado }
+                for (venda in vendasPendentes) {
+                    val atualizada = venda.copy(
+                        valorPago = venda.valorPeca,
+                        saldoDevedor = 0.0,
+                        status = "Quitado"
+                    )
+                    repository.update(atualizada)
+                }
+            }
+        }
+    }
+
     // Dados para o gráfico: resumo por mês (todos os meses, sem filtro) — mais recente primeiro
     val vendasPorMes: StateFlow<List<ResumoMes>> = todasVendas
         .map { vendas ->

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -21,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.controlevendas.app.ui.components.ClientePagamentoDialog
 import com.controlevendas.app.ui.components.SeletorMesesBar
 import com.controlevendas.app.ui.viewmodel.ClienteResumo
 import com.controlevendas.app.ui.viewmodel.VendasViewModel
@@ -37,6 +39,7 @@ fun ClientesScreen(viewModel: VendasViewModel) {
     val mesesDisponiveis by viewModel.mesesDisponiveis.collectAsState()
 
     var clienteParaExcluir by remember { mutableStateOf<ClienteResumo?>(null) }
+    var clienteParaPagamento by remember { mutableStateOf<ClienteResumo?>(null) }
 
     val context = LocalContext.current
     val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
@@ -162,6 +165,7 @@ fun ClientesScreen(viewModel: VendasViewModel) {
                                 itens = pecas
                             )
                         },
+                        onBaixa = { clienteParaPagamento = clienteResumo },
                         onExcluir = { clienteParaExcluir = clienteResumo }
                     )
                 }
@@ -171,6 +175,21 @@ fun ClientesScreen(viewModel: VendasViewModel) {
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
+    }
+
+    if (clienteParaPagamento != null) {
+        ClientePagamentoDialog(
+            cliente = clienteParaPagamento!!,
+            onDismiss = { clienteParaPagamento = null },
+            onConfirmarPagamento = { valor ->
+                viewModel.registrarPagamentoCliente(clienteParaPagamento!!.nome, valor)
+                clienteParaPagamento = null
+            },
+            onQuitarTotal = {
+                viewModel.quitarCliente(clienteParaPagamento!!.nome)
+                clienteParaPagamento = null
+            }
+        )
     }
 
     if (clienteParaExcluir != null) {
@@ -205,6 +224,7 @@ fun ClienteCard(
     cliente: ClienteResumo,
     formatador: NumberFormat,
     onCobrarTudo: () -> Unit,
+    onBaixa: () -> Unit,
     onExcluir: () -> Unit
 ) {
     var expandido by remember { mutableStateOf(false) }
@@ -236,11 +256,20 @@ fun ClienteCard(
                         Button(
                             onClick = onCobrarTudo,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                         ) {
-                            Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
                             Text("Cobrar", color = Color.White, fontSize = 12.sp)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        FilledTonalButton(
+                            onClick = onBaixa,
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(15.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Baixa", fontSize = 12.sp)
                         }
                     } else {
                         Surface(
@@ -271,13 +300,23 @@ fun ClienteCard(
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(
-                    text = if (cliente.saldoDevedor > 0.001) "Deve: ${formatador.format(cliente.saldoDevedor)}" else "100% Quitado",
-                    color = if (cliente.saldoDevedor > 0.001) MaterialTheme.colorScheme.error else Color(0xFF2E7D32),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = if (cliente.saldoDevedor > 0.001) "Deve: ${formatador.format(cliente.saldoDevedor)}" else "100% Quitado",
+                        color = if (cliente.saldoDevedor > 0.001) MaterialTheme.colorScheme.error else Color(0xFF2E7D32),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    if (cliente.totalPago > 0.001) {
+                        Text(
+                            text = "Pago: ${formatador.format(cliente.totalPago)}",
+                            color = Color(0xFF2E7D32),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(if (expandido) "Ocultar detalhes" else "Ver detalhes (${cliente.vendas.size})", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)

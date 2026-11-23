@@ -12,10 +12,14 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
@@ -30,10 +34,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import com.controlevendas.app.data.database.AppDatabase
 import com.controlevendas.app.data.model.Venda
 import com.controlevendas.app.data.repository.VendaRepository
@@ -72,12 +79,22 @@ class MainActivity : ComponentActivity() {
 
             ControleVendasTheme(modoTema = modoTema) {
                 var abaSelecionada by remember { mutableIntStateOf(0) } // 0: Vendas, 1: Clientes, 2: Resumo
+                val pagerState = rememberPagerState(initialPage = abaSelecionada, pageCount = { 3 })
+                LaunchedEffect(pagerState.currentPage) {
+                    abaSelecionada = pagerState.currentPage
+                }
+                LaunchedEffect(abaSelecionada) {
+                    if (pagerState.currentPage != abaSelecionada) {
+                        pagerState.animateScrollToPage(abaSelecionada)
+                    }
+                }
                 var showNovaVendaDialog by remember { mutableStateOf(false) }
                 var vendaEditando by remember { mutableStateOf<Venda?>(null) }
                 var vendaParaPagamento by remember { mutableStateOf<Venda?>(null) }
 
                 // Estados de Menu e Diálogos
-                var menuExpanded by remember { mutableStateOf(false) }
+                val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                val coroutineScope = rememberCoroutineScope()
                 var showTemaDialog by remember { mutableStateOf(false) }
                 var showGerenciarMesesDialog by remember { mutableStateOf(false) }
                 var showCriarMesDialog by remember { mutableStateOf(false) }
@@ -129,80 +146,34 @@ class MainActivity : ComponentActivity() {
                     topBar = {
                         TopAppBar(
                             title = {
+                                val titleText = when (abaSelecionada) {
+                                    0 -> "VENDAS REALIZADAS"
+                                    1 -> "CONTROLE DE CLIENTES"
+                                    else -> "RESUMO FINANCEIRO"
+                                }
                                 Text(
-                                    text = when (abaSelecionada) {
-                                        0 -> "Vendas Realizadas"
-                                        1 -> "Controle de Clientes"
-                                        else -> "Resumo Financeiro"
-                                    },
-                                    fontWeight = FontWeight.Bold
+                                    text = titleText,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp
                                 )
                             },
-                            actions = {
-                                IconButton(onClick = { menuExpanded = true }) {
+                            navigationIcon = {
+                                val isOpen = drawerState.isOpen || drawerState.targetValue == DrawerValue.Open
+                                val rotation by animateFloatAsState(
+                                    targetValue = if (isOpen) 90f else 0f,
+                                    label = "menuRotation"
+                                )
+                                IconButton(onClick = {
+                                    coroutineScope.launch {
+                                        if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                                    }
+                                }) {
                                     Icon(
-                                        Icons.Default.Menu,
-                                        contentDescription = "Menu de Opções",
-                                        tint = MaterialTheme.colorScheme.primary
+                                        imageVector = if (isOpen) Icons.Default.Close else Icons.Default.Menu,
+                                        contentDescription = if (isOpen) "Fechar menu" else "Abrir menu de opções",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.graphicsLayer(rotationZ = rotation)
                                     )
-                                }
-
-                                DropdownMenu(
-                                    expanded = menuExpanded,
-                                    onDismissRequest = { menuExpanded = false }
-                                ) {
-                                    DropdownMenuItem(
-                                        text = { Text("📤 Exportar para Google Planilhas") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            ExcelUtils.abrirNoGooglePlanilhasOuCompartilhar(context, todasVendas)
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("💾 Salvar Planilha (.xlsx)") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            exportLauncher.launch("Controle_de_Vendas.xlsx")
-                                        }
-                                    )
-                                    HorizontalDivider()
-                                    DropdownMenuItem(
-                                        text = { Text("📥 Importar Planilha do Dispositivo") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            filePickerLauncher.launch("*/*")
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("🗓️ Gerenciar Meses") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            showGerenciarMesesDialog = true
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("👥 Gerenciar Clientes e Peças") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            showGerenciarClientesProdutosDialog = true
-                                        }
-                                    )
-                                    HorizontalDivider()
-                                    DropdownMenuItem(
-                                        text = { Text("🎨 Tema (Claro / Escuro)") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            showTemaDialog = true
-                                        }
-                                    )
-                                    DropdownMenuItem(
-                                        text = { Text("🔄 Verificar Atualizações") },
-                                        onClick = {
-                                            menuExpanded = false
-                                            viewModel.verificarAtualizacao(context, manual = true)
-                                        }
-                                    )
-
                                 }
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
@@ -217,7 +188,9 @@ class MainActivity : ComponentActivity() {
                         ) {
                             NavigationBarItem(
                                 selected = abaSelecionada == 0,
-                                onClick = { abaSelecionada = 0 },
+                                onClick = {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(0) }
+                                },
                                 icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Vendas") },
                                 label = { Text("Vendas", fontWeight = if (abaSelecionada == 0) FontWeight.Bold else FontWeight.Normal) },
                                 colors = NavigationBarItemDefaults.colors(
@@ -228,7 +201,9 @@ class MainActivity : ComponentActivity() {
                             )
                             NavigationBarItem(
                                 selected = abaSelecionada == 1,
-                                onClick = { abaSelecionada = 1 },
+                                onClick = {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(1) }
+                                },
                                 icon = { Icon(Icons.Default.Group, contentDescription = "Clientes") },
                                 label = { Text("Clientes", fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
                                 colors = NavigationBarItemDefaults.colors(
@@ -239,7 +214,9 @@ class MainActivity : ComponentActivity() {
                             )
                             NavigationBarItem(
                                 selected = abaSelecionada == 2,
-                                onClick = { abaSelecionada = 2 },
+                                onClick = {
+                                    coroutineScope.launch { pagerState.animateScrollToPage(2) }
+                                },
                                 icon = { Icon(Icons.Default.Insights, contentDescription = "Resumo") },
                                 label = { Text("Resumo", fontWeight = if (abaSelecionada == 2) FontWeight.Bold else FontWeight.Normal) },
                                 colors = NavigationBarItemDefaults.colors(
@@ -263,18 +240,167 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding)) {
-                        when (abaSelecionada) {
-                            0 -> VendasListScreen(
-                                viewModel = viewModel,
-                                onEditarVenda = {
-                                    vendaEditando = it
-                                    showNovaVendaDialog = true
-                                },
-                                onReceberPagamento = { vendaParaPagamento = it }
-                            )
-                            1 -> ClientesScreen(viewModel = viewModel)
-                            2 -> DashboardScreen(viewModel = viewModel)
+                    Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                        ModalNavigationDrawer(
+                            drawerState = drawerState,
+                            scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
+                            drawerContent = {
+                                ModalDrawerSheet(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(0.8f),
+                                    drawerContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    drawerShape = RectangleShape
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 24.dp, vertical = 20.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "Menu de Opções",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                        }
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Gerenciar Clientes e Peças", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showGerenciarClientesProdutosDialog = true
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Gerenciar Meses", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showGerenciarMesesDialog = true
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Exportar para Google Planilhas", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                ExcelUtils.abrirNoGooglePlanilhasOuCompartilhar(context, todasVendas)
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.FileDownload, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Salvar Planilha (.xlsx)", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                exportLauncher.launch("Controle_de_Vendas.xlsx")
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Importar Planilha do Dispositivo", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                filePickerLauncher.launch("*/*")
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Mudar Tema", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showTemaDialog = true
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                        NavigationDrawerItem(
+                                            icon = { Icon(Icons.Default.Insights, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Verificar atualizações", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            selected = false,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                viewModel.verificarAtualizacao(context, manual = true)
+                                            },
+                                            colors = NavigationDrawerItemDefaults.colors(
+                                                unselectedContainerColor = Color.Transparent,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                            ),
+                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                        )
+                                    }
+                                }
+                            }
+                        ) {
+                            HorizontalPager(
+                                state = pagerState,
+                                modifier = Modifier.fillMaxSize()
+                            ) { page ->
+                                when (page) {
+                                    0 -> VendasListScreen(
+                                        viewModel = viewModel,
+                                        onEditarVenda = {
+                                            vendaEditando = it
+                                            showNovaVendaDialog = true
+                                        },
+                                        onReceberPagamento = { vendaParaPagamento = it }
+                                    )
+                                    1 -> ClientesScreen(viewModel = viewModel)
+                                    2 -> DashboardScreen(viewModel = viewModel)
+                                }
+                            }
                         }
                     }
 

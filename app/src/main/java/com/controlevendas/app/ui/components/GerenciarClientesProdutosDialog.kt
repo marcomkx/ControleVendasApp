@@ -3,6 +3,9 @@ package com.controlevendas.app.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -206,7 +209,13 @@ fun GerenciarClientesProdutosDialog(
                 )
             }
             AcaoTipo.MESCLAR -> {
-                val opcoesDestino = if (abaSelecionada == 0) clientes else produtos
+                val opcoesDestinoBrutas = if (abaSelecionada == 0) clientes else produtos
+                val opcoesDestino = opcoesDestinoBrutas.filter { it != item }
+                var expandedDest by remember { mutableStateOf(false) }
+                val opcoesFiltradas = remember(opcoesDestino, destinoSelecionado) {
+                    if (destinoSelecionado.isBlank()) opcoesDestino
+                    else opcoesDestino.filter { it.contains(destinoSelecionado, ignoreCase = true) }
+                }
 
                 if (showConfirmacaoMescla) {
                     AlertDialog(
@@ -219,9 +228,9 @@ fun GerenciarClientesProdutosDialog(
                             Button(
                                 onClick = {
                                     if (abaSelecionada == 0) {
-                                        onMesclarClientes(item, destinoSelecionado)
+                                        onMesclarClientes(item, destinoSelecionado.trim())
                                     } else {
-                                        onMesclarProdutos(item, destinoSelecionado)
+                                        onMesclarProdutos(item, destinoSelecionado.trim())
                                     }
                                     showConfirmacaoMescla = false
                                     itemSelecionadoParaAcao = null
@@ -241,37 +250,52 @@ fun GerenciarClientesProdutosDialog(
                         onDismissRequest = { itemSelecionadoParaAcao = null },
                         title = { Text("Mesclar $tituloTipo") },
                         text = {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
                                 Text("Mesclar \"$item\" para qual $tituloTipo existente?")
                                 if (opcoesDestino.isEmpty()) {
                                     Text("Não há outros itens para mesclar.", color = MaterialTheme.colorScheme.error)
                                 } else {
-                                    var expandedDest by remember { mutableStateOf(false) }
-                                    ExposedDropdownMenuBox(
-                                        expanded = expandedDest,
-                                        onExpandedChange = { expandedDest = it },
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
+                                    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                         OutlinedTextField(
                                             value = destinoSelecionado,
-                                            onValueChange = {},
-                                            readOnly = true,
-                                            label = { Text("Selecionar Destino") },
-                                            modifier = Modifier.fillMaxWidth().menuAnchor(),
-                                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDest) }
+                                            onValueChange = {
+                                                destinoSelecionado = it
+                                                expandedDest = true
+                                            },
+                                            label = { Text("Digite ou selecione o destino") },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            singleLine = true
                                         )
-                                        ExposedDropdownMenu(
-                                            expanded = expandedDest,
-                                            onDismissRequest = { expandedDest = false }
-                                        ) {
-                                            opcoesDestino.forEach { destino ->
-                                                DropdownMenuItem(
-                                                    text = { Text(destino) },
-                                                    onClick = {
-                                                        destinoSelecionado = destino
-                                                        expandedDest = false
+
+                                        if (expandedDest && opcoesFiltradas.isNotEmpty()) {
+                                            Card(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .heightIn(max = 180.dp),
+                                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                                shape = RoundedCornerShape(8.dp)
+                                            ) {
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .verticalScroll(rememberScrollState()),
+                                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                                ) {
+                                                    opcoesFiltradas.forEach { destino ->
+                                                        DropdownMenuItem(
+                                                            text = { Text(destino) },
+                                                            onClick = {
+                                                                destinoSelecionado = destino
+                                                                expandedDest = false
+                                                            }
+                                                        )
                                                     }
-                                                )
+                                                }
                                             }
                                         }
                                     }
