@@ -404,12 +404,12 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         val valorFormatado = formatador.format(valorPendente)
 
         val detalheItens = if (itens.isNotEmpty()) {
-            "\nReferente às peças: " + itens.joinToString(", ")
+            "\nItens:\n" + itens.joinToString("\n") { "• $it" }
         } else ""
 
         val mensagem = """
             Olá $cliente, tudo bem? 😊
-            Passando para lembrar do seu saldo pendente de $valorFormatado$detalheItens.
+            Passando para lembrar do seu saldo pendente de $valorFormatado.$detalheItens
             Se já fez o pagamento, por favor desconsidere! Qualquer dúvida me avise. Obrigado(a)! ❤️
         """.trimIndent()
 

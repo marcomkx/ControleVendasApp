@@ -42,7 +42,7 @@ fun GerenciarClientesProdutosDialog(
         onDismissRequest = onDismiss,
         title = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Gerenciar Clientes e Peças", fontWeight = FontWeight.Bold)
+                Text("Gerenciar Clientes e Produtos", fontWeight = FontWeight.Bold)
                 TabRow(selectedTabIndex = abaSelecionada) {
                     Tab(
                         selected = abaSelecionada == 0,
@@ -58,7 +58,7 @@ fun GerenciarClientesProdutosDialog(
                             abaSelecionada = 1
                             textoBusca = ""
                         },
-                        text = { Text("👗 Peças (${produtos.size})") }
+                        text = { Text("👗 Produtos (${produtos.size})") }
                     )
                 }
 
@@ -66,7 +66,7 @@ fun GerenciarClientesProdutosDialog(
                 OutlinedTextField(
                     value = textoBusca,
                     onValueChange = { textoBusca = it },
-                    placeholder = { Text(if (abaSelecionada == 0) "Buscar cliente..." else "Buscar peça...") },
+                    placeholder = { Text(if (abaSelecionada == 0) "Buscar cliente..." else "Buscar produto...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
                     trailingIcon = {
                         if (textoBusca.isNotEmpty()) {
@@ -165,7 +165,7 @@ fun GerenciarClientesProdutosDialog(
 
     // Diálogo de Ação (Editar, Mesclar ou Excluir)
     if (itemSelecionadoParaAcao != null && acaoTipo != null) {
-        val tituloTipo = if (abaSelecionada == 0) "Cliente" else "Peça"
+        val tituloTipo = if (abaSelecionada == 0) "Cliente" else "Produto"
         val item = itemSelecionadoParaAcao!!
 
         when (acaoTipo) {

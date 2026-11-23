@@ -3,19 +3,35 @@ package com.controlevendas.app.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.controlevendas.app.data.model.Venda
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+data class ItemVendaTemp(
+    val produto: String,
+    val quantidade: Int,
+    val valorUnitario: Double
+) {
+    val valorTotal: Double get() = quantidade * valorUnitario
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,9 +42,8 @@ fun NovaVendaDialog(
     sugestoesProdutos: List<String> = emptyList(),
     sugestoesMeses: List<String> = emptyList(),
     onDismiss: () -> Unit,
-    onSalvar: (Venda) -> Unit
+    onSalvar: (List<Venda>) -> Unit
 ) {
-    // Calcula automaticamente o mês e ano atual do celular (ex: "NOVEMBRO/2026")
     val mesAtualCelular = remember {
         val sdf = SimpleDateFormat("MMMM/yyyy", Locale("pt", "BR"))
         sdf.format(Date()).uppercase()
@@ -41,20 +56,30 @@ fun NovaVendaDialog(
     }
 
     var cliente by remember { mutableStateOf(vendaEditando?.cliente ?: "") }
-    var produto by remember { mutableStateOf(vendaEditando?.produto ?: "") }
-    var valorPecaStr by remember {
-        mutableStateOf(
-            vendaEditando?.valorPeca?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
-        )
-    }
+    var mesReferencia by remember { mutableStateOf(mesInicial) }
     var valorPagoStr by remember {
         mutableStateOf(
             vendaEditando?.valorPago?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
         )
     }
-    var mesReferencia by remember { mutableStateOf(mesInicial) }
 
-    // Estados para controle de exibição do autocomplete
+    // Current item inputs
+    var produtoAtual by remember { mutableStateOf(vendaEditando?.produto ?: "") }
+    var quantidadeAtual by remember { mutableIntStateOf(1) }
+    var valorUnitarioStr by remember {
+        mutableStateOf(
+            vendaEditando?.valorPeca?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
+        )
+    }
+
+    // Cart of items
+    var itensCarrinho by remember {
+        mutableStateOf(
+            if (vendaEditando != null) listOf(ItemVendaTemp(vendaEditando.produto, 1, vendaEditando.valorPeca))
+            else emptyList()
+        )
+    }
+
     var expandedCliente by remember { mutableStateOf(false) }
     var expandedProduto by remember { mutableStateOf(false) }
     var expandedMes by remember { mutableStateOf(false) }
@@ -67,28 +92,25 @@ fun NovaVendaDialog(
         }
     }
 
-    val sugestoesProdutosFiltradas = remember(produto, sugestoesProdutos) {
-        if (produto.isBlank()) {
+    val sugestoesProdutosFiltradas = remember(produtoAtual, sugestoesProdutos) {
+        if (produtoAtual.isBlank()) {
             sugestoesProdutos.take(6)
         } else {
-            sugestoesProdutos.filter { it.contains(produto, ignoreCase = true) && !it.equals(produto, ignoreCase = true) }.take(6)
+            sugestoesProdutos.filter { it.contains(produtoAtual, ignoreCase = true) && !it.equals(produtoAtual, ignoreCase = true) }.take(6)
         }
     }
 
-    // Lista de sugestões de mês: inclui o mês atual do celular + meses que já existem no banco
     val listaSugestoesMeses = remember(sugestoesMeses, mesAtualCelular) {
         val set = linkedSetOf(mesAtualCelular)
         set.addAll(sugestoesMeses)
         set.toList()
     }
 
-    val valorPeca = valorPecaStr.replace(",", ".").toDoubleOrNull() ?: 0.0
+    val valorTotalGeral = itensCarrinho.sumOf { it.valorTotal }
     val valorPago = valorPagoStr.replace(",", ".").toDoubleOrNull() ?: 0.0
     val margem = 30.0
 
-    val lucro = valorPeca * (margem / 100.0)
-    val fornecedor = (valorPeca - lucro).coerceAtLeast(0.0)
-    val saldoDevedor = (valorPeca - valorPago).coerceAtLeast(0.0)
+
 
     val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
 
@@ -145,6 +167,9 @@ fun NovaVendaDialog(
                     }
                 }
 
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Text("Adicionar Produtos:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+
                 // Campo Produto com Auto-completar
                 ExposedDropdownMenuBox(
                     expanded = expandedProduto && sugestoesProdutosFiltradas.isNotEmpty(),
@@ -152,12 +177,12 @@ fun NovaVendaDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = produto,
+                        value = produtoAtual,
                         onValueChange = {
-                            produto = it
+                            produtoAtual = it
                             expandedProduto = true
                         },
-                        label = { Text("Produto/Peça * (ex: sutiã, calça)") },
+                        label = { Text("Produto * (ex: sutiã, calça)") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -175,7 +200,7 @@ fun NovaVendaDialog(
                             DropdownMenuItem(
                                 text = { Text(sugestao) },
                                 onClick = {
-                                    produto = sugestao
+                                    produtoAtual = sugestao
                                     expandedProduto = false
                                 }
                             )
@@ -183,27 +208,103 @@ fun NovaVendaDialog(
                     }
                 }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = valorPecaStr,
-                        onValueChange = { valorPecaStr = it },
-                        label = { Text("Valor Total (R$) *") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
-
-                    OutlinedTextField(
-                        value = valorPagoStr,
-                        onValueChange = { valorPagoStr = it },
-                        label = { Text("Valor Já Pago (R$)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f),
-                        singleLine = true
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Quantidade:", fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { if (quantidadeAtual > 1) quantidadeAtual-- }) {
+                            Icon(Icons.Default.Remove, contentDescription = "Menos")
+                        }
+                        Text(
+                            text = "$quantidadeAtual",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        IconButton(onClick = { quantidadeAtual++ }) {
+                            Icon(Icons.Default.Add, contentDescription = "Mais")
+                        }
+                    }
                 }
 
-                // Campo Mês com Auto-completar e detecção automática
+                OutlinedTextField(
+                    value = valorUnitarioStr,
+                    onValueChange = { valorUnitarioStr = it },
+                    label = { Text("Valor Unitário (R$) *") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Button(
+                    onClick = {
+                        val valUnit = valorUnitarioStr.replace(",", ".").toDoubleOrNull() ?: 0.0
+                        if (produtoAtual.isNotBlank() && valUnit > 0 && quantidadeAtual > 0) {
+                            val nomeProd = if (quantidadeAtual > 1) "${produtoAtual.trim()} (x$quantidadeAtual)" else produtoAtual.trim()
+                            itensCarrinho = itensCarrinho + ItemVendaTemp(nomeProd, quantidadeAtual, valUnit)
+                            produtoAtual = ""
+                            quantidadeAtual = 1
+                            valorUnitarioStr = ""
+                        }
+                    },
+                    enabled = produtoAtual.isNotBlank() && (valorUnitarioStr.replace(",", ".").toDoubleOrNull() ?: 0.0) > 0,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Adicionar Produto à Lista")
+                }
+
+                if (itensCarrinho.isNotEmpty()) {
+                    Text("Produtos na Venda (${itensCarrinho.size}):", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        itensCarrinho.forEachIndexed { index, item ->
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(item.produto, fontWeight = FontWeight.Medium, fontSize = 14.sp)
+                                        Text("Total: ${formatador.format(item.valorTotal)}", fontSize = 12.sp, color = Color.Gray)
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            itensCarrinho = itensCarrinho.filterIndexed { i, _ -> i != index }
+                                        },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Icon(Icons.Default.DeleteOutline, contentDescription = "Remover", tint = MaterialTheme.colorScheme.error)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                OutlinedTextField(
+                    value = valorPagoStr,
+                    onValueChange = { valorPagoStr = it },
+                    label = { Text("Valor Pago (R$)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Campo Mês com Auto-completar
                 ExposedDropdownMenuBox(
                     expanded = expandedMes,
                     onExpandedChange = { expandedMes = it },
@@ -242,49 +343,44 @@ fun NovaVendaDialog(
                         }
                     }
                 }
-
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Resumo Calculado:", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                        Text("💰 Seu Lucro (${margem.toInt()}%): ${formatador.format(lucro)}")
-                        Text("🏭 Pagar ao Fornecedor: ${formatador.format(fornecedor)}")
-                        Text(
-                            text = if (saldoDevedor <= 0.001) "✅ Quitado (Sem saldo devedor)" else "⏳ Saldo Devedor: ${formatador.format(saldoDevedor)}",
-                            fontWeight = FontWeight.Bold,
-                            color = if (saldoDevedor <= 0.001) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    if (cliente.isNotBlank() && produto.isNotBlank() && valorPeca > 0) {
-                        val venda = (vendaEditando ?: Venda(
-                            cliente = cliente.trim(),
-                            produto = produto.trim(),
-                            valorPeca = valorPeca
-                        )).copy(
-                            cliente = cliente.trim(),
-                            produto = produto.trim(),
-                            valorPeca = valorPeca,
-                            valorPago = valorPago,
-                            saldoDevedor = saldoDevedor,
-                            margemLucroPercentual = margem,
-                            lucro = lucro,
-                            mesReferencia = mesReferencia.trim().uppercase(),
-                            status = if (saldoDevedor <= 0.001) "Quitado" else "Pendente"
-                        )
-                        onSalvar(venda)
+                    if (cliente.isNotBlank() && itensCarrinho.isNotEmpty()) {
+                        var pagoRestante = valorPago
+                        val vendasASalvar = itensCarrinho.map { item ->
+                            val vTotal = item.valorTotal
+                            val vPagoItem = if (pagoRestante >= vTotal) {
+                                pagoRestante -= vTotal
+                                vTotal
+                            } else {
+                                val p = pagoRestante
+                                pagoRestante = 0.0
+                                p
+                            }
+                            val sDevedor = (vTotal - vPagoItem).coerceAtLeast(0.0)
+                            (vendaEditando ?: Venda(
+                                cliente = cliente.trim(),
+                                produto = item.produto,
+                                valorPeca = vTotal
+                            )).copy(
+                                cliente = cliente.trim(),
+                                produto = item.produto,
+                                valorPeca = vTotal,
+                                valorPago = vPagoItem,
+                                saldoDevedor = sDevedor,
+                                margemLucroPercentual = margem,
+                                lucro = vTotal * (margem / 100.0),
+                                mesReferencia = mesReferencia.trim().uppercase(),
+                                status = if (sDevedor <= 0.001) "Quitado" else "Pendente"
+                            )
+                        }
+                        onSalvar(vendasASalvar)
                     }
                 },
-                enabled = cliente.isNotBlank() && produto.isNotBlank() && valorPeca > 0
+                enabled = cliente.isNotBlank() && itensCarrinho.isNotEmpty()
             ) {
                 Text("Salvar")
             }

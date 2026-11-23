@@ -86,50 +86,7 @@ fun DashboardScreen(viewModel: VendasViewModel) {
         // Cards de métricas principais
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    MetricaCard(
-                        titulo = "Lucro Total",
-                        valor = formatador.format(metricas.lucroTotal),
-                        icone = Icons.Default.AttachMoney,
-                        containerColor = Color(0xFFFCE4EC),
-                        contentColor = Color(0xFFC2185B),
-                        modifier = Modifier.weight(1f)
-                    )
-                    MetricaCard(
-                        titulo = "Total Vendido",
-                        valor = formatador.format(metricas.totalVendido),
-                        icone = Icons.Default.Inventory2,
-                        containerColor = Color(0xFFF8BBD0),
-                        contentColor = Color(0xFF880E4F),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    MetricaCard(
-                        titulo = "p/ Fornecedor",
-                        valor = formatador.format(metricas.totalFornecedor),
-                        icone = Icons.Default.LocalShipping,
-                        containerColor = Color(0xFFEDE7F6),
-                        contentColor = Color(0xFF4A148C),
-                        modifier = Modifier.weight(1f)
-                    )
-                    MetricaCard(
-                        titulo = "A Receber (Pendente)",
-                        valor = formatador.format(metricas.totalPendente),
-                        icone = Icons.Default.HourglassTop,
-                        containerColor = Color(0xFFFFF3E0),
-                        contentColor = Color(0xFFE65100),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
+                // Row 1: Total de Peças (esquerda) | Total Vendido (direita)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -143,11 +100,57 @@ fun DashboardScreen(viewModel: VendasViewModel) {
                         modifier = Modifier.weight(1f)
                     )
                     MetricaCard(
-                        titulo = "Total Já Pago",
+                        titulo = "Total Vendido",
+                        valor = formatador.format(metricas.totalVendido),
+                        icone = Icons.Default.AttachMoney,
+                        containerColor = Color(0xFFF8BBD0),
+                        contentColor = Color(0xFF880E4F),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Row 2: A Receber (esquerda) | Recebido (direita)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    MetricaCard(
+                        titulo = "A Receber",
+                        valor = formatador.format(metricas.totalPendente),
+                        icone = Icons.Default.HourglassTop,
+                        containerColor = Color(0xFFFFF3E0),
+                        contentColor = Color(0xFFE65100),
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricaCard(
+                        titulo = "Recebido",
                         valor = formatador.format(metricas.totalPago),
                         icone = Icons.Default.CheckCircle,
                         containerColor = Color(0xFFE0F2F1),
                         contentColor = Color(0xFF004D40),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Row 3: Lucro Mensal (esquerda) | Para Fornecedor (direita)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    MetricaCard(
+                        titulo = "Lucro Mensal",
+                        valor = formatador.format(metricas.lucroTotal),
+                        icone = Icons.Default.AttachMoney,
+                        containerColor = Color(0xFFE8F5E9),
+                        contentColor = Color(0xFF2E7D32),
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricaCard(
+                        titulo = "Para Fornecedor",
+                        valor = formatador.format(metricas.totalFornecedor),
+                        icone = Icons.Default.LocalShipping,
+                        containerColor = Color(0xFFEDE7F6),
+                        contentColor = Color(0xFF4A148C),
                         modifier = Modifier.weight(1f)
                     )
                 }

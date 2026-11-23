@@ -13,6 +13,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -40,6 +42,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.controlevendas.app.data.database.AppDatabase
 import com.controlevendas.app.data.model.Venda
@@ -72,12 +76,29 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val modoTema by viewModel.modoTema.collectAsState()
 
+            var showSplash by remember { mutableStateOf(true) }
             LaunchedEffect(Unit) {
+                delay(1500L)
+                showSplash = false
                 viewModel.inicializarTema(context)
                 viewModel.verificarAtualizacao(context)
             }
 
-            ControleVendasTheme(modoTema = modoTema) {
+            if (showSplash) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFFAF0E8)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.cris_logo),
+                        contentDescription = "Logo Abertura",
+                        modifier = Modifier.size(260.dp)
+                    )
+                }
+            } else {
+                ControleVendasTheme(modoTema = modoTema) {
                 var abaSelecionada by remember { mutableIntStateOf(0) } // 0: Vendas, 1: Clientes, 2: Resumo
                 val pagerState = rememberPagerState(initialPage = abaSelecionada, pageCount = { 3 })
                 LaunchedEffect(pagerState.currentPage) {
@@ -274,7 +295,7 @@ class MainActivity : ComponentActivity() {
                                         HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Gerenciar Clientes e Peças", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            label = { Text("Gerenciar Clientes e Produtos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -415,8 +436,8 @@ class MainActivity : ComponentActivity() {
                                 showNovaVendaDialog = false
                                 vendaEditando = null
                             },
-                            onSalvar = { venda ->
-                                viewModel.salvarVenda(venda)
+                            onSalvar = { vendas ->
+                                vendas.forEach { viewModel.salvarVenda(it) }
                                 showNovaVendaDialog = false
                                 vendaEditando = null
                             }
@@ -674,6 +695,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+          }
         }
     }
 }

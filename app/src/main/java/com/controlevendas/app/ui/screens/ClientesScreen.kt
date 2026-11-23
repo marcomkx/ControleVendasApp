@@ -157,11 +157,13 @@ fun ClientesScreen(viewModel: VendasViewModel) {
                         cliente = clienteResumo,
                         formatador = formatador,
                         onCobrarTudo = {
-                            val pecas = clienteResumo.vendas.filter { !it.isQuitado }.map { "${it.produto} (${formatador.format(it.saldoDevedor)})" }
+                            val vendasPendentes = clienteResumo.vendas.filter { !it.isQuitado }
+                            val pecas = vendasPendentes.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
+                            val totalOriginal = vendasPendentes.sumOf { it.valorPeca }
                             viewModel.cobrarWhatsApp(
                                 context = context,
                                 cliente = clienteResumo.nome,
-                                valorPendente = clienteResumo.saldoDevedor,
+                                valorPendente = totalOriginal,
                                 itens = pecas
                             )
                         },
