@@ -175,6 +175,59 @@ object UpdateChecker {
         }
     }
 
+    suspend fun downloadApkWithProgress(
+        context: Context,
+        release: GitHubRelease,
+        onProgress: (Float, Long, Long) -> Unit
+    ): File? = withContext(Dispatchers.IO) {
+        try {
+            val downloadUrl = release.apkUrl ?: release.releaseUrl
+            val fileName = "ControleVendas_v${release.versionName}.apk"
+            val destination = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+            val file = File(destination, fileName)
+            if (file.exists()) file.delete()
+
+            val url = URL(downloadUrl)
+            val connection = (url.openConnection() as HttpURLConnection).apply {
+                requestMethod = "GET"
+                setRequestProperty("User-Agent", "ControleVendasApp")
+                connectTimeout = 15000
+                readTimeout = 15000
+            }
+
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val fileLength = connection.contentLength
+                val inputStream = connection.inputStream
+                val outputStream = file.outputStream()
+                val data = ByteArray(8192)
+                var total: Long = 0
+                var count: Int
+                while (inputStream.read(data).also { count = it } != -1) {
+                    total += count.toLong()
+                    outputStream.write(data, 0, count)
+                    if (fileLength > 0) {
+                        val progress = total.toFloat() / fileLength.toFloat()
+                        onProgress(progress, total, fileLength.toLong())
+                    } else {
+                        onProgress(-1f, total, -1L)
+                    }
+                }
+                outputStream.flush()
+                outputStream.close()
+                inputStream.close()
+                return@withContext file
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao baixar APK com progresso", e)
+        }
+        return@withContext null
+    }
+
+    fun instalarApkPublic(context: Context, file: File) {
+        instalarApk(context, file)
+    }
+
     private fun isVersionNewer(current: String, latest: String): Boolean {
         try {
             val currentParts = current.split(".").map { part ->
@@ -184,7 +237,7 @@ object UpdateChecker {
                 part.filter { it.isDigit() }.toIntOrNull() ?: 0
             }
 
-            for (i in 0 until maxOf(currentParts.size, latestParts.size)) {
+            for (i: Int in 0 until maxOf(currentParts.size, latestParts.size)) {
                 val curr = currentParts.getOrElse(i) { 0 }
                 val lat = latestParts.getOrElse(i) { 0 }
                 if (lat > curr) return true

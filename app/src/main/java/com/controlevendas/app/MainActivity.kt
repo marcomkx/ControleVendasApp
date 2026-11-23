@@ -670,8 +670,13 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Notificação de Nova Versão no GitHub
-                    if (novaVersao != null && !ignorarAtualizacao) {
+                    // Notificação de Nova Versão no GitHub com Barra de Progresso In-App
+                    var isDownloading by remember { mutableStateOf(false) }
+                    var downloadProgress by remember { mutableFloatStateOf(0f) }
+                    var downloadedBytes by remember { mutableLongStateOf(0L) }
+                    var totalBytes by remember { mutableLongStateOf(0L) }
+
+                    if (novaVersao != null && !ignorarAtualizacao && !isDownloading) {
                         AlertDialog(
                             onDismissRequest = { ignorarAtualizacao = true },
                             title = { Text("🚀 Nova Atualização Disponível!") },
@@ -680,8 +685,21 @@ class MainActivity : ComponentActivity() {
                             },
                             confirmButton = {
                                 Button(onClick = {
-                                    com.controlevendas.app.utils.UpdateChecker.baixarEInstalarApk(context, novaVersao!!)
-                                    ignorarAtualizacao = true
+                                    isDownloading = true
+                                    coroutineScope.launch {
+                                        val file = com.controlevendas.app.utils.UpdateChecker.downloadApkWithProgress(context, novaVersao!!) { prog, down, total ->
+                                            downloadProgress = prog
+                                            downloadedBytes = down
+                                            totalBytes = total
+                                        }
+                                        isDownloading = false
+                                        ignorarAtualizacao = true
+                                        if (file != null && file.exists()) {
+                                            com.controlevendas.app.utils.UpdateChecker.instalarApkPublic(context, file)
+                                        } else {
+                                            Toast.makeText(context, "Erro ao baixar atualização.", Toast.LENGTH_LONG).show()
+                                        }
+                                    }
                                 }) {
                                     Text("Baixar e Instalar")
                                 }
@@ -690,6 +708,18 @@ class MainActivity : ComponentActivity() {
                                 TextButton(onClick = { ignorarAtualizacao = true }) {
                                     Text("Depois")
                                 }
+                            }
+                        )
+                    }
+
+                    if (isDownloading) {
+                        com.controlevendas.app.ui.components.UpdateProgressDialog(
+                            versionName = novaVersao?.versionName ?: "",
+                            progress = downloadProgress,
+                            downloadedBytes = downloadedBytes,
+                            totalBytes = totalBytes,
+                            onCancel = {
+                                isDownloading = false
                             }
                         )
                     }
