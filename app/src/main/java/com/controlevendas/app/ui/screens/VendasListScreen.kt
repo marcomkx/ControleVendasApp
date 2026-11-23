@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -266,7 +266,7 @@ fun VendaCard(
                         Icon(Icons.Default.Share, contentDescription = "Cobrar WhatsApp", tint = Color(0xFF25D366))
                     }
                     FilledTonalButton(onClick = onReceberPagamento) {
-                        Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Baixa")
                     }

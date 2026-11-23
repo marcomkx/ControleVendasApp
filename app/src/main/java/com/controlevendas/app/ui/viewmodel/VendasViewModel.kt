@@ -410,11 +410,30 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         val mensagem = """
             Olá $cliente, tudo bem? 😊
             Passando para lembrar do seu saldo pendente de $valorFormatado.$detalheItens
-            Se já fez o pagamento, por favor desconsidere! Qualquer dúvida me avise. Obrigado(a)! ❤️
+            Qualquer dúvida me avise. Obrigado(a)! ❤️
         """.trimIndent()
 
         try {
             val url = "https://api.whatsapp.com/send?text=" + URLEncoder.encode(mensagem, "UTF-8")
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse(url)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+        } catch (_: Exception) {
+            Toast.makeText(context, "WhatsApp não instalado ou erro ao abrir", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun compartilharItensWhatsApp(context: Context, cliente: String, itens: List<String>) {
+        val texto = if (itens.isNotEmpty()) {
+            "Compras de $cliente:\n" + itens.joinToString("\n") { "• $it" }
+        } else {
+            "Nenhuma compra registrada para $cliente."
+        }
+
+        try {
+            val url = "https://api.whatsapp.com/send?text=" + URLEncoder.encode(texto, "UTF-8")
             val intent = Intent(Intent.ACTION_VIEW).apply {
                 data = Uri.parse(url)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK

@@ -44,24 +44,24 @@ fun ClientePagamentoDialog(
                 )
 
                 Button(
-                    onClick = onQuitarTotal,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    onClick = {
+                        val v = valorStr.replace(",", ".").toDoubleOrNull()
+                        if (v != null && v > 0) {
+                            onConfirmarPagamento(v)
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Quitar Tudo (${formatador.format(cliente.saldoDevedor)})")
+                    Text("Confirmar Parcial")
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    val v = valorStr.replace(",", ".").toDoubleOrNull()
-                    if (v != null && v > 0) {
-                        onConfirmarPagamento(v)
-                    }
-                }
+                onClick = onQuitarTotal,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             ) {
-                Text("Confirmar Baixa")
+                Text("Quitar Tudo (${formatador.format(cliente.saldoDevedor)})")
             }
         },
         dismissButton = {

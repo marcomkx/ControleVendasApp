@@ -1,16 +1,19 @@
 package com.controlevendas.app.ui.screens
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -22,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.controlevendas.app.data.model.Venda
 import com.controlevendas.app.ui.components.ClientePagamentoDialog
 import com.controlevendas.app.ui.components.SeletorMesesBar
 import com.controlevendas.app.ui.viewmodel.ClienteResumo
@@ -31,7 +35,11 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClientesScreen(viewModel: VendasViewModel) {
+fun ClientesScreen(
+    viewModel: VendasViewModel,
+    onEditarVenda: (Venda) -> Unit,
+    onExcluirVenda: (Venda) -> Unit
+) {
     val clientes by viewModel.clientesAgrupados.collectAsState()
     val pesquisa by viewModel.pesquisa.collectAsState()
     val apenasPendentes by viewModel.filtroClientesApenasPendentes.collectAsState()
@@ -68,18 +76,13 @@ fun ClientesScreen(viewModel: VendasViewModel) {
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Seletor de Meses para Clientes
-        SeletorMesesBar(
-            meses = mesesDisponiveis,
-            mesSelecionado = filtroMesCliente,
-            onSelectMes = { viewModel.setFiltroClientesMes(it) }
-        )
-
-        // Filtro rápido de Pendentes / Todos
+        // Seletor unificado de Filtros de Clientes e Meses na mesma linha rolável (Filtros à esquerda)
+        val scrollState = rememberScrollState()
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 2.dp),
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .horizontalScroll(scrollState),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -95,11 +98,35 @@ fun ClientesScreen(viewModel: VendasViewModel) {
             FilterChip(
                 selected = apenasPendentes,
                 onClick = { if (!apenasPendentes) viewModel.toggleFiltroClientesApenasPendentes() },
-                label = { Text("⚠️ Só com Débito ($clientesComDivida)") },
+                label = { Text("Só com Débito ($clientesComDivida)") },
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = Color(0xFFC2185B),
                     selectedLabelColor = Color.White
                 )
+            )
+
+            VerticalDivider(
+                modifier = Modifier.height(24.dp).padding(horizontal = 2.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+            )
+
+            val chipColors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                selectedLabelColor = Color.White
+            )
+            mesesDisponiveis.forEach { mes ->
+                FilterChip(
+                    selected = filtroMesCliente == mes,
+                    onClick = { viewModel.setFiltroClientesMes(mes) },
+                    label = { Text(mes) },
+                    colors = chipColors
+                )
+            }
+            FilterChip(
+                selected = filtroMesCliente == null || filtroMesCliente == "Todos",
+                onClick = { viewModel.setFiltroClientesMes("Todos") },
+                label = { Text("Todos os Meses") },
+                colors = chipColors
             )
         }
 
@@ -159,16 +186,25 @@ fun ClientesScreen(viewModel: VendasViewModel) {
                         onCobrarTudo = {
                             val vendasPendentes = clienteResumo.vendas.filter { !it.isQuitado }
                             val pecas = vendasPendentes.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
-                            val totalOriginal = vendasPendentes.sumOf { it.valorPeca }
                             viewModel.cobrarWhatsApp(
                                 context = context,
                                 cliente = clienteResumo.nome,
-                                valorPendente = totalOriginal,
+                                valorPendente = clienteResumo.saldoDevedor,
                                 itens = pecas
                             )
                         },
                         onBaixa = { clienteParaPagamento = clienteResumo },
-                        onExcluir = { clienteParaExcluir = clienteResumo }
+                        onCompartilhar = {
+                            val pecas = clienteResumo.vendas.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
+                            viewModel.compartilharItensWhatsApp(
+                                context = context,
+                                cliente = clienteResumo.nome,
+                                itens = pecas
+                            )
+                        },
+                        onEditarVenda = onEditarVenda,
+                        onExcluirVenda = onExcluirVenda,
+                        onExcluirCliente = { clienteParaExcluir = clienteResumo }
                     )
                 }
             }
@@ -227,7 +263,10 @@ fun ClienteCard(
     formatador: NumberFormat,
     onCobrarTudo: () -> Unit,
     onBaixa: () -> Unit,
-    onExcluir: () -> Unit
+    onCompartilhar: () -> Unit,
+    onEditarVenda: (Venda) -> Unit,
+    onExcluirVenda: (Venda) -> Unit,
+    onExcluirCliente: () -> Unit
 ) {
     var expandido by remember { mutableStateOf(false) }
 
@@ -239,7 +278,7 @@ fun ClienteCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -250,46 +289,26 @@ fun ClienteCard(
                     Text("${cliente.totalPecas} peças • Total comprado: ${formatador.format(cliente.totalComprado)}", color = Color.Gray, fontSize = 13.sp)
                 }
 
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (cliente.saldoDevedor > 0.001) {
-                        Button(
-                            onClick = onCobrarTudo,
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(15.dp))
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text("Cobrar", color = Color.White, fontSize = 12.sp)
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        FilledTonalButton(
-                            onClick = onBaixa,
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Icon(Icons.Default.Payment, contentDescription = null, modifier = Modifier.size(15.dp))
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text("Baixa", fontSize = 12.sp)
-                        }
-                    } else {
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFE8F5E9)
-                        ) {
-                            Text(
-                                text = "Sem débitos",
-                                color = Color(0xFF2E7D32),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = {
+                            val vendaParaEditar = cliente.vendas.firstOrNull { !it.isQuitado } ?: cliente.vendas.lastOrNull()
+                            if (vendaParaEditar != null) {
+                                onEditarVenda(vendaParaEditar)
+                            }
+                        },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar Venda",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
 
                     IconButton(
-                        onClick = onExcluir,
+                        onClick = onExcluirCliente,
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -302,22 +321,81 @@ fun ClienteCard(
                 }
             }
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(
+                    onClick = onCompartilhar,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text("Compartilhar", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                }
+
+                if (cliente.saldoDevedor > 0.001) {
+                    Button(
+                        onClick = onCobrarTudo,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Cobrar", color = Color.White, fontSize = 11.sp, maxLines = 1)
+                    }
+
+                    FilledTonalButton(
+                        onClick = onBaixa,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text("Baixa", fontSize = 11.sp, maxLines = 1)
+                    }
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFE8F5E9),
+                        modifier = Modifier.weight(2f)
+                    ) {
+                        Text(
+                            text = "Sem débitos",
+                            color = Color(0xFF2E7D32),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
                         text = if (cliente.saldoDevedor > 0.001) "Deve: ${formatador.format(cliente.saldoDevedor)}" else "100% Quitado",
                         color = if (cliente.saldoDevedor > 0.001) MaterialTheme.colorScheme.error else Color(0xFF2E7D32),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        fontSize = 13.sp
                     )
-                    if (cliente.totalPago > 0.001) {
-                        Text(
-                            text = "Pago: ${formatador.format(cliente.totalPago)}",
-                            color = Color(0xFF2E7D32),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    Text(
+                        text = "Pago: ${formatador.format(cliente.totalPago)}",
+                        color = Color(0xFF2E7D32),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -339,13 +417,29 @@ fun ClienteCard(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("• ${venda.produto} (${venda.mesReferencia})", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                            Text(
-                                text = if (venda.isQuitado) "Quitado" else "Falta ${formatador.format(venda.saldoDevedor)}",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (venda.isQuitado) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
-                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("• ${venda.produto} (${venda.mesReferencia})", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
+                                Text(
+                                    text = if (venda.isQuitado) "Quitado" else "Falta ${formatador.format(venda.saldoDevedor)}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (venda.isQuitado) Color(0xFF2E7D32) else MaterialTheme.colorScheme.error
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(
+                                    onClick = { onEditarVenda(venda) },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Default.Edit, contentDescription = "Editar Venda", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                }
+                                IconButton(
+                                    onClick = { onExcluirVenda(venda) },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(Icons.Default.DeleteOutline, contentDescription = "Excluir Venda", tint = Color.Gray, modifier = Modifier.size(16.dp))
+                                }
+                            }
                         }
                     }
                 }

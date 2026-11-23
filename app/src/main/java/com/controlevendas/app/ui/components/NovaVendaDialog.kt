@@ -167,9 +167,6 @@ fun NovaVendaDialog(
                     }
                 }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                Text("Adicionar Produtos:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-
                 // Campo Produto com Auto-completar
                 ExposedDropdownMenuBox(
                     expanded = expandedProduto && sugestoesProdutosFiltradas.isNotEmpty(),
@@ -182,7 +179,7 @@ fun NovaVendaDialog(
                             produtoAtual = it
                             expandedProduto = true
                         },
-                        label = { Text("Produto * (ex: sutiã, calça)") },
+                        label = { Text("Produto * (ex: sutiã)") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -210,34 +207,48 @@ fun NovaVendaDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Quantidade:", fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { if (quantidadeAtual > 1) quantidadeAtual-- }) {
-                            Icon(Icons.Default.Remove, contentDescription = "Menos")
-                        }
-                        Text(
-                            text = "$quantidadeAtual",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                        IconButton(onClick = { quantidadeAtual++ }) {
-                            Icon(Icons.Default.Add, contentDescription = "Mais")
+                    OutlinedTextField(
+                        value = valorUnitarioStr,
+                        onValueChange = { valorUnitarioStr = it },
+                        label = { Text("Valor R$ *") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.weight(1.1f),
+                        singleLine = true
+                    )
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(0.9f)
+                    ) {
+                        Text("Qtd:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            IconButton(
+                                onClick = { if (quantidadeAtual > 1) quantidadeAtual-- },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = "Menos", modifier = Modifier.size(16.dp))
+                            }
+                            Text(
+                                text = "$quantidadeAtual",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 15.sp,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            )
+                            IconButton(
+                                onClick = { quantidadeAtual++ },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Mais", modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
-
-                OutlinedTextField(
-                    value = valorUnitarioStr,
-                    onValueChange = { valorUnitarioStr = it },
-                    label = { Text("Valor Unitário (R$) *") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
 
                 Button(
                     onClick = {

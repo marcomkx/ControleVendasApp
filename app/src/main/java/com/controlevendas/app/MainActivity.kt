@@ -169,7 +169,7 @@ class MainActivity : ComponentActivity() {
                             title = {
                                 val titleText = when (abaSelecionada) {
                                     0 -> "VENDAS REALIZADAS"
-                                    1 -> "CONTROLE DE CLIENTES"
+                                    1 -> "CLIENTES E PEÇAS"
                                     else -> "RESUMO FINANCEIRO"
                                 }
                                 Text(
@@ -225,8 +225,8 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     coroutineScope.launch { pagerState.animateScrollToPage(1) }
                                 },
-                                icon = { Icon(Icons.Default.Group, contentDescription = "Clientes") },
-                                label = { Text("Clientes", fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
+                                icon = { Icon(Icons.Default.Group, contentDescription = "Clientes e Peças") },
+                                label = { Text("Clientes e Peças", fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.primary,
                                     selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -410,7 +410,17 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.fillMaxSize()
                             ) { page ->
                                 when (page) {
-                                    0 -> VendasListScreen(
+                                    0 -> ClientesScreen(
+                                        viewModel = viewModel,
+                                        onEditarVenda = {
+                                            vendaEditando = it
+                                            showNovaVendaDialog = true
+                                        },
+                                        onExcluirVenda = { venda ->
+                                            viewModel.excluirVenda(venda)
+                                        }
+                                    )
+                                    1 -> VendasListScreen(
                                         viewModel = viewModel,
                                         onEditarVenda = {
                                             vendaEditando = it
@@ -418,7 +428,6 @@ class MainActivity : ComponentActivity() {
                                         },
                                         onReceberPagamento = { vendaParaPagamento = it }
                                     )
-                                    1 -> ClientesScreen(viewModel = viewModel)
                                     2 -> DashboardScreen(viewModel = viewModel)
                                 }
                             }
