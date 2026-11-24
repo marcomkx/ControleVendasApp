@@ -241,7 +241,7 @@ class MainActivity : ComponentActivity() {
                                     coroutineScope.launch { pagerState.animateScrollToPage(1) }
                                 },
                                 icon = { Icon(Icons.Default.Group, contentDescription = "Clientes e Produtos") },
-                                label = { Text("Clientes e Produtos", fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
+                                label = { Text("Clientes e Produtos", fontSize = 10.sp, maxLines = 1, fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.primary,
                                     selectedTextColor = MaterialTheme.colorScheme.primary,
