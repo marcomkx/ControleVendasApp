@@ -65,7 +65,7 @@ fun GerenciarClientesProdutosScreen(
                         abaSelecionada = 1
                         textoBusca = ""
                     },
-                    text = { Text("👗 Peças / Produtos (${produtos.size})", fontWeight = FontWeight.Bold) }
+                    text = { Text("👗 Produtos (${produtos.size})", fontWeight = FontWeight.Bold) }
                 )
             }
         }
@@ -74,7 +74,7 @@ fun GerenciarClientesProdutosScreen(
         OutlinedTextField(
             value = textoBusca,
             onValueChange = { textoBusca = it },
-            placeholder = { Text(if (abaSelecionada == 0) "Buscar cliente..." else "Buscar peça/produto...") },
+            placeholder = { Text(if (abaSelecionada == 0) "Buscar cliente..." else "Buscar produto...") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
             trailingIcon = {
                 if (textoBusca.isNotEmpty()) {

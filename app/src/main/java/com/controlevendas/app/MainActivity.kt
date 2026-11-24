@@ -171,7 +171,7 @@ class MainActivity : ComponentActivity() {
                             title = {
                                 val titleText = when (abaSelecionada) {
                                     0 -> "VENDAS REALIZADAS"
-                                    1 -> "CLIENTES E PEÇAS"
+                                    1 -> "CLIENTES E PRODUTOS"
                                     else -> "RESUMO FINANCEIRO"
                                 }
                                 Text(
@@ -240,8 +240,8 @@ class MainActivity : ComponentActivity() {
                                 onClick = {
                                     coroutineScope.launch { pagerState.animateScrollToPage(1) }
                                 },
-                                icon = { Icon(Icons.Default.Group, contentDescription = "Clientes e Peças") },
-                                label = { Text("Clientes e Peças", fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
+                                icon = { Icon(Icons.Default.Group, contentDescription = "Clientes e Produtos") },
+                                label = { Text("Clientes e Produtos", fontWeight = if (abaSelecionada == 1) FontWeight.Bold else FontWeight.Normal) },
                                 colors = NavigationBarItemDefaults.colors(
                                     selectedIconColor = MaterialTheme.colorScheme.primary,
                                     selectedTextColor = MaterialTheme.colorScheme.primary,
