@@ -428,9 +428,8 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         } else ""
 
         val mensagem = """
-            Olá $cliente, tudo bem? 😊
-            Passando para lembrar do seu saldo pendente de $valorFormatado.$detalheItens
-            Qualquer dúvida me avise. Obrigado(a)! ❤️
+            Olá $cliente, tudo bem? 😊 Passando para lembrar do seu saldo pendente de $valorFormatado.$detalheItens
+            Qualquer dúvida me avise! ❤️
         """.trimIndent()
 
         try {
@@ -445,9 +444,11 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
     }
 
-    fun compartilharItensWhatsApp(context: Context, cliente: String, itens: List<String>) {
+    fun compartilharItensWhatsApp(context: Context, cliente: String, itens: List<String>, valorTotal: Double = 0.0) {
+        val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+        val totalFormatado = formatador.format(valorTotal)
         val texto = if (itens.isNotEmpty()) {
-            "Compras de $cliente:\n" + itens.joinToString("\n") { "• $it" }
+            "Compras de $cliente:\n" + itens.joinToString("\n") { "• $it" } + "\n\nTotal: $totalFormatado"
         } else {
             "Nenhuma compra registrada para $cliente."
         }

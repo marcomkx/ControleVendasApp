@@ -199,7 +199,8 @@ fun ClientesScreen(
                             viewModel.compartilharItensWhatsApp(
                                 context = context,
                                 cliente = clienteResumo.nome,
-                                itens = pecas
+                                itens = pecas,
+                                valorTotal = clienteResumo.totalComprado
                             )
                         },
                         onEditarVenda = onEditarVenda,
