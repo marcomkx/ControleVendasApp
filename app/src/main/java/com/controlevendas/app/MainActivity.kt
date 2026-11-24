@@ -51,7 +51,7 @@ import kotlinx.coroutines.launch
 import com.controlevendas.app.data.database.AppDatabase
 import com.controlevendas.app.data.model.Venda
 import com.controlevendas.app.data.repository.VendaRepository
-import com.controlevendas.app.ui.components.GerenciarClientesProdutosDialog
+import com.controlevendas.app.ui.screens.GerenciarClientesProdutosScreen
 import com.controlevendas.app.ui.components.NovaVendaDialog
 import com.controlevendas.app.ui.components.PagamentoDialog
 import com.controlevendas.app.ui.screens.ClientesScreen
@@ -123,7 +123,6 @@ class MainActivity : ComponentActivity() {
                 var showGerenciarMesesDialog by remember { mutableStateOf(false) }
                 var showCriarMesDialog by remember { mutableStateOf(false) }
                 var novoMesInput by remember { mutableStateOf("") }
-                var showGerenciarClientesProdutosDialog by remember { mutableStateOf(false) }
                 var mesParaExcluir by remember { mutableStateOf<String?>(null) }
 
                 var vendasImportadasDoArquivo by remember { mutableStateOf<List<Venda>>(emptyList()) }
@@ -319,21 +318,6 @@ class MainActivity : ComponentActivity() {
                                         }
                                         HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.Group, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Gerenciar Clientes e Produtos", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            selected = false,
-                                            onClick = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                showGerenciarClientesProdutosDialog = true
-                                            },
-                                            colors = NavigationDrawerItemDefaults.colors(
-                                                unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                            ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                        )
-                                        NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
                                             label = { Text("Gerenciar Meses", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
                                             selected = false,
@@ -445,14 +429,7 @@ class MainActivity : ComponentActivity() {
                                             viewModel.excluirVenda(venda)
                                         }
                                     )
-                                    1 -> VendasListScreen(
-                                        viewModel = viewModel,
-                                        onEditarVenda = {
-                                            vendaEditando = it
-                                            showNovaVendaDialog = true
-                                        },
-                                        onReceberPagamento = { vendaParaPagamento = it }
-                                    )
+                                    1 -> GerenciarClientesProdutosScreen(viewModel = viewModel)
                                     2 -> DashboardScreen(viewModel = viewModel)
                                 }
                             }
@@ -689,20 +666,7 @@ class MainActivity : ComponentActivity() {
 
 
 
-                    // Gerenciamento de Clientes e Peças
-                    if (showGerenciarClientesProdutosDialog) {
-                        GerenciarClientesProdutosDialog(
-                            clientes = clientesSugestoes,
-                            produtos = produtosSugestoes,
-                            onRenomearCliente = { antigo, novo -> viewModel.renomearCliente(antigo, novo) },
-                            onExcluirCliente = { nome -> viewModel.excluirClienteCompleto(nome) },
-                            onMesclarClientes = { origem, destino -> viewModel.mesclarClientes(origem, destino) },
-                            onRenomearProduto = { antigo, novo -> viewModel.renomearProduto(antigo, novo) },
-                            onExcluirProduto = { nome -> viewModel.excluirProdutoCompleto(nome) },
-                            onMesclarProdutos = { origem, destino -> viewModel.mesclarProdutos(origem, destino) },
-                            onDismiss = { showGerenciarClientesProdutosDialog = false }
-                        )
-                    }
+
 
                     // Notificação de Nova Versão no GitHub com Barra de Progresso In-App
                     var isDownloading by remember { mutableStateOf(false) }
