@@ -77,8 +77,16 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
     private val _modoTema = MutableStateFlow(TemaModo.SISTEMA)
     val modoTema: StateFlow<TemaModo> = _modoTema
 
-    val mesesDisponiveis: StateFlow<List<String>> = repository.mesesDisponiveis
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val mesesDisponiveis: StateFlow<List<String>> = combine(
+        repository.mesesDisponiveis,
+        _filtroMes
+    ) { meses, filtroAtual ->
+        if (filtroAtual != null && filtroAtual != "Todos" && meses.contains(filtroAtual)) {
+            listOf(filtroAtual) + meses.filter { it != filtroAtual }
+        } else {
+            meses
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         viewModelScope.launch {
@@ -96,6 +104,7 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
     }
 
     val clientesSugestoes: StateFlow<List<String>> = repository.clientes
+        .map { lista -> lista.filter { !it.contains("mês em branco", ignoreCase = true) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val produtosSugestoes: StateFlow<List<String>> = repository.produtos
@@ -179,6 +188,7 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
 
         vendasFiltradasPorMes.groupBy { it.cliente.trim().lowercase() }
+            .filterKeys { !it.contains("mês em branco") && !it.contains("mes em branco") }
             .map { (_, vendasCliente) ->
                 val nomePadrao = vendasCliente.first().cliente.trim()
                 ClienteResumo(
@@ -296,7 +306,10 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
                 status = "Quitado"
             )
             repository.insert(vendaPlaceholder)
+            selecionouMesManualmente = true
+            selecionouClienteMesManualmente = true
             _filtroMes.value = mes.trim().uppercase()
+            _filtroClientesMes.value = mes.trim().uppercase()
         }
     }
 

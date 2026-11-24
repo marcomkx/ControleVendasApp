@@ -125,6 +125,7 @@ class MainActivity : ComponentActivity() {
                 var showCriarMesDialog by remember { mutableStateOf(false) }
                 var novoMesInput by remember { mutableStateOf("") }
                 var mesParaExcluir by remember { mutableStateOf<String?>(null) }
+                var mesParaExcluirSegundaEtapa by remember { mutableStateOf<String?>(null) }
 
                 var vendasImportadasDoArquivo by remember { mutableStateOf<List<Venda>>(emptyList()) }
                 var showConfirmImportacaoArquivo by remember { mutableStateOf(false) }
@@ -557,7 +558,10 @@ class MainActivity : ComponentActivity() {
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
                                                     Text(mes, fontWeight = FontWeight.Medium, fontSize = 15.sp)
-                                                    IconButton(onClick = { mesParaExcluir = mes }) {
+                                                    IconButton(onClick = {
+                                                        showGerenciarMesesDialog = false
+                                                        mesParaExcluir = mes
+                                                    }) {
                                                         Icon(
                                                             Icons.Default.DeleteOutline,
                                                             contentDescription = "Apagar $mes",
@@ -591,6 +595,12 @@ class MainActivity : ComponentActivity() {
                                         onValueChange = { novoMesInput = it },
                                         singleLine = true,
                                         label = { Text("Mês/Ano") },
+                                        placeholder = { Text("JANEIRO/2027") },
+                                        supportingText = {
+                                            if (novoMesInput.isNotBlank() && !novoMesInput.contains("/")) {
+                                                Text("É obrigatório o uso da barra (/)", color = MaterialTheme.colorScheme.error)
+                                            }
+                                        },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
@@ -598,14 +608,14 @@ class MainActivity : ComponentActivity() {
                             confirmButton = {
                                 Button(
                                     onClick = {
-                                        if (novoMesInput.isNotBlank()) {
+                                        if (novoMesInput.isNotBlank() && novoMesInput.contains("/")) {
                                             viewModel.criarMesEmBranco(novoMesInput.trim().uppercase())
                                             novoMesInput = ""
                                             showCriarMesDialog = false
                                             Toast.makeText(context, "Mês em branco criado com sucesso!", Toast.LENGTH_SHORT).show()
                                         }
                                     },
-                                    enabled = novoMesInput.isNotBlank()
+                                    enabled = novoMesInput.isNotBlank() && novoMesInput.contains("/")
                                 ) {
                                     Text("Criar")
                                 }
@@ -618,28 +628,60 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Confirmação de Exclusão de Mês
+                    // Confirmação de Exclusão de Mês (Etapa 1)
                     if (mesParaExcluir != null) {
                         AlertDialog(
                             onDismissRequest = { mesParaExcluir = null },
-                            title = { Text("Apagar Mês") },
+                            title = { Text("⚠️ Atenção: Apagar Mês") },
                             text = {
-                                Text("Deseja realmente APAGAR todas as vendas do mês \"$mesParaExcluir\"?\n\nEsta ação não poderá ser desfeita.")
+                                Text("Você está prestes a apagar o mês \"$mesParaExcluir\" e todas as suas vendas associadas.\n\nDeseja realmente continuar?")
                             },
                             confirmButton = {
                                 Button(
                                     onClick = {
-                                        viewModel.excluirMes(mesParaExcluir!!)
+                                        val m = mesParaExcluir!!
                                         mesParaExcluir = null
-                                        Toast.makeText(context, "Mês apagado com sucesso!", Toast.LENGTH_SHORT).show()
+                                        mesParaExcluirSegundaEtapa = m
                                     },
                                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                                 ) {
-                                    Text("Sim, Apagar", color = MaterialTheme.colorScheme.onError)
+                                    Text("Continuar", color = MaterialTheme.colorScheme.onError)
                                 }
                             },
                             dismissButton = {
                                 TextButton(onClick = { mesParaExcluir = null }) {
+                                    Text("Cancelar")
+                                }
+                            }
+                        )
+                    }
+
+                    // Confirmação de Exclusão de Mês (Etapa 2 - Dupla Verificação)
+                    if (mesParaExcluirSegundaEtapa != null) {
+                        AlertDialog(
+                            onDismissRequest = { mesParaExcluirSegundaEtapa = null },
+                            title = { Text("⚠️ ATENÇÃO", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) },
+                            text = {
+                                Text(
+                                    "⚠️ Tem certeza que deseja excluir? Todas as vendas serão apagadas",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        viewModel.excluirMes(mesParaExcluirSegundaEtapa!!)
+                                        mesParaExcluirSegundaEtapa = null
+                                        Toast.makeText(context, "Mês apagado com sucesso!", Toast.LENGTH_SHORT).show()
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                                ) {
+                                    Text("Sim, Apagar Definitivamente", color = MaterialTheme.colorScheme.onError)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { mesParaExcluirSegundaEtapa = null }) {
                                     Text("Cancelar")
                                 }
                             }

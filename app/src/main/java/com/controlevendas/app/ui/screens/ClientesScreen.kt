@@ -172,7 +172,7 @@ fun ClientesScreen(
                 item {
                     Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            text = if (apenasPendentes) "Nenhum cliente com débito pendente! 🎉" else "Nenhum cliente encontrado.",
+                            text = if (apenasPendentes) "Nenhum cliente com débito pendente! 🎉" else "Nenhuma venda realizada.",
                             color = Color.Gray,
                             fontWeight = FontWeight.Medium
                         )
