@@ -35,6 +35,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
@@ -179,21 +182,34 @@ class MainActivity : ComponentActivity() {
                                 )
                             },
                             navigationIcon = {
-                                val isOpen = drawerState.isOpen || drawerState.targetValue == DrawerValue.Open
-                                val rotation by animateFloatAsState(
-                                    targetValue = if (isOpen) 90f else 0f,
-                                    label = "menuRotation"
-                                )
-                                IconButton(onClick = {
-                                    coroutineScope.launch {
-                                        if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(start = 4.dp, end = 4.dp)
+                                ) {
+                                    val isOpen = drawerState.isOpen || drawerState.targetValue == DrawerValue.Open
+                                    val rotation by animateFloatAsState(
+                                        targetValue = if (isOpen) 90f else 0f,
+                                        label = "menuRotation"
+                                    )
+                                    IconButton(onClick = {
+                                        coroutineScope.launch {
+                                            if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                                        }
+                                    }) {
+                                        Icon(
+                                            imageVector = if (isOpen) Icons.Default.Close else Icons.Default.Menu,
+                                            contentDescription = if (isOpen) "Fechar menu" else "Abrir menu de opções",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.graphicsLayer(rotationZ = rotation)
+                                        )
                                     }
-                                }) {
-                                    Icon(
-                                        imageVector = if (isOpen) Icons.Default.Close else Icons.Default.Menu,
-                                        contentDescription = if (isOpen) "Fechar menu" else "Abrir menu de opções",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.graphicsLayer(rotationZ = rotation)
+                                    Image(
+                                        painter = painterResource(id = R.drawable.cris_logo),
+                                        contentDescription = "Logo Cris",
+                                        modifier = Modifier
+                                            .size(36.dp)
+                                            .clip(CircleShape),
+                                        contentScale = ContentScale.Crop
                                     )
                                 }
                             },
@@ -270,7 +286,7 @@ class MainActivity : ComponentActivity() {
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .fillMaxWidth(0.8f),
-                                    drawerContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    drawerContainerColor = Color(0xFFFCE4EC),
                                     drawerShape = RectangleShape
                                 ) {
                                     Column(
@@ -281,9 +297,18 @@ class MainActivity : ComponentActivity() {
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(horizontal = 24.dp, vertical = 20.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            horizontalArrangement = Arrangement.Start,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            Image(
+                                                painter = painterResource(id = R.drawable.cris_logo),
+                                                contentDescription = "Logo Cris",
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .clip(CircleShape),
+                                                contentScale = ContentScale.Crop
+                                            )
+                                            Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                 text = "Menu de Opções",
                                                 style = MaterialTheme.typography.titleMedium,
