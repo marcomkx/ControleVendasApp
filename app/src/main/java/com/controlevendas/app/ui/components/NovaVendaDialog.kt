@@ -1,6 +1,5 @@
 package com.controlevendas.app.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,46 +36,48 @@ data class ItemVendaTemp(
 @Composable
 fun NovaVendaDialog(
     vendaEditando: Venda? = null,
+    vendasParaEditar: List<Venda> = emptyList(),
     mesAtual: String = "",
     sugestoesClientes: List<String> = emptyList(),
     sugestoesProdutos: List<String> = emptyList(),
     sugestoesMeses: List<String> = emptyList(),
     onDismiss: () -> Unit,
-    onSalvar: (List<Venda>) -> Unit
+    onSalvar: (List<Venda>, List<Venda>) -> Unit
 ) {
+    val loteInicial = when {
+        vendasParaEditar.isNotEmpty() -> vendasParaEditar
+        vendaEditando != null -> listOf(vendaEditando)
+        else -> emptyList()
+    }
+
     val mesAtualCelular = remember {
         val sdf = SimpleDateFormat("MMMM/yyyy", Locale("pt", "BR"))
         sdf.format(Date()).uppercase()
     }
 
     val mesInicial = when {
-        vendaEditando != null -> vendaEditando.mesReferencia
+        loteInicial.isNotEmpty() -> loteInicial.first().mesReferencia
         mesAtual.isNotBlank() && mesAtual != "Todos" -> mesAtual
         else -> mesAtualCelular
     }
 
-    var cliente by remember { mutableStateOf(vendaEditando?.cliente ?: "") }
+    var cliente by remember { mutableStateOf(loteInicial.firstOrNull()?.cliente ?: "") }
     var mesReferencia by remember { mutableStateOf(mesInicial) }
+
+    val totalPagoInicial = loteInicial.sumOf { it.valorPago }
     var valorPagoStr by remember {
-        mutableStateOf(
-            vendaEditando?.valorPago?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
-        )
+        mutableStateOf(if (totalPagoInicial > 0) String.format(Locale("pt", "BR"), "%.2f", totalPagoInicial).replace(".", ",") else "")
     }
 
     // Current item inputs
-    var produtoAtual by remember { mutableStateOf(vendaEditando?.produto ?: "") }
+    var produtoAtual by remember { mutableStateOf("") }
     var quantidadeAtual by remember { mutableIntStateOf(1) }
-    var valorUnitarioStr by remember {
-        mutableStateOf(
-            vendaEditando?.valorPeca?.let { if (it > 0) String.format(Locale("pt", "BR"), "%.2f", it).replace(".", ",") else "" } ?: ""
-        )
-    }
+    var valorUnitarioStr by remember { mutableStateOf("") }
 
     // Cart of items
     var itensCarrinho by remember {
-        mutableStateOf(
-            if (vendaEditando != null) listOf(ItemVendaTemp(vendaEditando.produto, 1, vendaEditando.valorPeca))
-            else emptyList()
+        mutableStateOf<List<ItemVendaTemp>>(
+            loteInicial.map { ItemVendaTemp(it.produto, 1, it.valorPeca) }
         )
     }
 
@@ -106,11 +107,8 @@ fun NovaVendaDialog(
         set.toList()
     }
 
-    val valorTotalGeral = itensCarrinho.sumOf { it.valorTotal }
     val valorPago = valorPagoStr.replace(",", ".").toDoubleOrNull() ?: 0.0
     val margem = 30.0
-
-
 
     val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
 
@@ -118,7 +116,7 @@ fun NovaVendaDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = if (vendaEditando == null) "Nova Venda" else "Editar Venda",
+                text = if (loteInicial.isEmpty()) "Nova Venda" else "Editar Venda",
                 fontWeight = FontWeight.Bold
             )
         },
@@ -254,8 +252,10 @@ fun NovaVendaDialog(
                     onClick = {
                         val valUnit = valorUnitarioStr.replace(",", ".").toDoubleOrNull() ?: 0.0
                         if (produtoAtual.isNotBlank() && valUnit > 0 && quantidadeAtual > 0) {
-                            val nomeProd = if (quantidadeAtual > 1) "${produtoAtual.trim()} (x$quantidadeAtual)" else produtoAtual.trim()
-                            itensCarrinho = itensCarrinho + ItemVendaTemp(nomeProd, quantidadeAtual, valUnit)
+                            val novosItens = (1..quantidadeAtual).map {
+                                ItemVendaTemp(produtoAtual.trim(), 1, valUnit)
+                            }
+                            itensCarrinho = itensCarrinho + novosItens
                             produtoAtual = ""
                             quantidadeAtual = 1
                             valorUnitarioStr = ""
@@ -372,11 +372,8 @@ fun NovaVendaDialog(
                                 p
                             }
                             val sDevedor = (vTotal - vPagoItem).coerceAtLeast(0.0)
-                            (vendaEditando ?: Venda(
-                                cliente = cliente.trim(),
-                                produto = item.produto,
-                                valorPeca = vTotal
-                            )).copy(
+                            Venda(
+                                id = 0L,
                                 cliente = cliente.trim(),
                                 produto = item.produto,
                                 valorPeca = vTotal,
@@ -385,10 +382,11 @@ fun NovaVendaDialog(
                                 margemLucroPercentual = margem,
                                 lucro = vTotal * (margem / 100.0),
                                 mesReferencia = mesReferencia.trim().uppercase(),
-                                status = if (sDevedor <= 0.001) "Quitado" else "Pendente"
+                                status = if (sDevedor <= 0.001) "Quitado" else "Pendente",
+                                data = loteInicial.firstOrNull()?.data?.ifBlank { "" } ?: ""
                             )
                         }
-                        onSalvar(vendasASalvar)
+                        onSalvar(loteInicial, vendasASalvar)
                     }
                 },
                 enabled = cliente.isNotBlank() && itensCarrinho.isNotEmpty()

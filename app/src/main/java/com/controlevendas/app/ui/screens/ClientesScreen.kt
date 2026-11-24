@@ -37,7 +37,7 @@ import java.util.Locale
 @Composable
 fun ClientesScreen(
     viewModel: VendasViewModel,
-    onEditarVenda: (Venda) -> Unit,
+    onEditarVenda: (List<Venda>) -> Unit,
     onExcluirVenda: (Venda) -> Unit
 ) {
     val clientes by viewModel.clientesAgrupados.collectAsState()
@@ -264,7 +264,7 @@ fun ClienteCard(
     onCobrarTudo: () -> Unit,
     onBaixa: () -> Unit,
     onCompartilhar: () -> Unit,
-    onEditarVenda: (Venda) -> Unit,
+    onEditarVenda: (List<Venda>) -> Unit,
     onExcluirVenda: (Venda) -> Unit,
     onExcluirCliente: () -> Unit
 ) {
@@ -292,9 +292,8 @@ fun ClienteCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = {
-                            val vendaParaEditar = cliente.vendas.firstOrNull { !it.isQuitado } ?: cliente.vendas.lastOrNull()
-                            if (vendaParaEditar != null) {
-                                onEditarVenda(vendaParaEditar)
+                            if (cliente.vendas.isNotEmpty()) {
+                                onEditarVenda(cliente.vendas)
                             }
                         },
                         modifier = Modifier.size(32.dp)
@@ -428,7 +427,7 @@ fun ClienteCard(
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(
-                                    onClick = { onEditarVenda(venda) },
+                                    onClick = { onEditarVenda(listOf(venda)) },
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(Icons.Default.Edit, contentDescription = "Editar Venda", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))

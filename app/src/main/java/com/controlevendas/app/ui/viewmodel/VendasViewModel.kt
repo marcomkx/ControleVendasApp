@@ -256,6 +256,13 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
     }
 
+    fun atualizarVendasLote(vendasAntigas: List<Venda>, vendasNovas: List<Venda>) {
+        viewModelScope.launch {
+            vendasAntigas.forEach { repository.delete(it) }
+            vendasNovas.forEach { repository.insert(it) }
+        }
+    }
+
     fun registrarPagamento(venda: Venda, valorRecebido: Double) {
         viewModelScope.launch {
             val novoPago = venda.valorPago + valorRecebido

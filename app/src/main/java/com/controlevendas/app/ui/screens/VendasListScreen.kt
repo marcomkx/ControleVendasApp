@@ -32,7 +32,7 @@ import java.util.Locale
 @Composable
 fun VendasListScreen(
     viewModel: VendasViewModel,
-    onEditarVenda: (Venda) -> Unit,
+    onEditarVenda: (List<Venda>) -> Unit,
     onReceberPagamento: (Venda) -> Unit
 ) {
     val vendas by viewModel.vendasFiltradas.collectAsState()
@@ -138,7 +138,7 @@ fun VendasListScreen(
                     formatador = formatador,
                     onReceberPagamento = { onReceberPagamento(venda) },
                     onQuitar = { viewModel.quitarVenda(venda) },
-                    onEditar = { onEditarVenda(venda) },
+                    onEditar = { onEditarVenda(listOf(venda)) },
                     onExcluir = { vendaParaExcluir = venda },
                     onCobrar = {
                         viewModel.cobrarWhatsApp(

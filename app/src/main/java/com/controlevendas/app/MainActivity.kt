@@ -115,6 +115,7 @@ class MainActivity : ComponentActivity() {
                 }
                 var showNovaVendaDialog by remember { mutableStateOf(false) }
                 var vendaEditando by remember { mutableStateOf<Venda?>(null) }
+                var vendasParaEditarLote by remember { mutableStateOf<List<Venda>>(emptyList()) }
                 var vendaParaPagamento by remember { mutableStateOf<Venda?>(null) }
 
                 // Estados de Menu e Diálogos
@@ -431,8 +432,9 @@ class MainActivity : ComponentActivity() {
                                 when (page) {
                                     0 -> ClientesScreen(
                                         viewModel = viewModel,
-                                        onEditarVenda = {
-                                            vendaEditando = it
+                                        onEditarVenda = { vendas ->
+                                            vendasParaEditarLote = vendas
+                                            vendaEditando = vendas.firstOrNull()
                                             showNovaVendaDialog = true
                                         },
                                         onExcluirVenda = { venda ->
@@ -448,18 +450,28 @@ class MainActivity : ComponentActivity() {
 
                     if (showNovaVendaDialog) {
                         NovaVendaDialog(
-                            vendaEditando = vendaEditando,
+                            vendasParaEditar = vendasParaEditarLote,
                             mesAtual = if (filtroMes != null && filtroMes != "Todos") filtroMes!! else "",
                             sugestoesClientes = clientesSugestoes,
                             sugestoesProdutos = produtosSugestoes,
                             sugestoesMeses = mesesDisponiveis,
                             onDismiss = {
                                 showNovaVendaDialog = false
+                                vendasParaEditarLote = emptyList()
                                 vendaEditando = null
                             },
-                            onSalvar = { vendas ->
-                                vendas.forEach { viewModel.salvarVenda(it) }
+                            onSalvar = { antigas, novas ->
+                                if (antigas.isNotEmpty()) {
+                                    val batchData = antigas.first().data
+                                    val batchId = batchData.ifBlank { System.currentTimeMillis().toString() }
+                                    val vendasComData = novas.map { it.copy(data = batchId) }
+                                    viewModel.atualizarVendasLote(antigas, vendasComData)
+                                } else {
+                                    val batchId = System.currentTimeMillis().toString()
+                                    novas.map { it.copy(data = batchId) }.forEach { viewModel.salvarVenda(it) }
+                                }
                                 showNovaVendaDialog = false
+                                vendasParaEditarLote = emptyList()
                                 vendaEditando = null
                             }
                         )
