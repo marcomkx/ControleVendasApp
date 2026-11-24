@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -281,11 +282,19 @@ class MainActivity : ComponentActivity() {
                             drawerState = drawerState,
                             scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.55f),
                             drawerContent = {
+                                val isDark = when (modoTema) {
+                                    TemaModo.CLARO -> false
+                                    TemaModo.ESCURO -> true
+                                    TemaModo.SISTEMA -> isSystemInDarkTheme()
+                                }
+                                val drawerBg = if (isDark) MaterialTheme.colorScheme.surface else Color(0xFFFCE4EC)
+                                val drawerContentColor = if (isDark) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSecondaryContainer
+
                                 ModalDrawerSheet(
                                     modifier = Modifier
                                         .fillMaxHeight()
                                         .fillMaxWidth(0.8f),
-                                    drawerContainerColor = Color(0xFFFCE4EC),
+                                    drawerContainerColor = drawerBg,
                                     drawerShape = RectangleShape
                                 ) {
                                     Column(
@@ -313,13 +322,13 @@ class MainActivity : ComponentActivity() {
                                                 style = MaterialTheme.typography.titleMedium,
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                color = drawerContentColor
                                             )
                                         }
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f))
+                                        HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f))
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Gerenciar Meses", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = drawerContentColor) },
+                                            label = { Text("Gerenciar Meses", fontSize = 13.sp, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -327,15 +336,15 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationDrawerItemDefaults.colors(
                                                 unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                                unselectedTextColor = drawerContentColor,
+                                                unselectedIconColor = drawerContentColor
                                             ),
                                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                         )
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
+                                        HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Exportar para Google Planilhas", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            icon = { Icon(Icons.Default.Share, contentDescription = null, tint = drawerContentColor) },
+                                            label = { Text("Exportar para Google Planilhas", fontSize = 13.sp, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -343,14 +352,14 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationDrawerItemDefaults.colors(
                                                 unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                                unselectedTextColor = drawerContentColor,
+                                                unselectedIconColor = drawerContentColor
                                             ),
                                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                         )
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.FileDownload, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Salvar Planilha (.xlsx)", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            icon = { Icon(Icons.Default.FileDownload, contentDescription = null, tint = drawerContentColor) },
+                                            label = { Text("Salvar Planilha (.xlsx)", fontSize = 13.sp, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -358,14 +367,14 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationDrawerItemDefaults.colors(
                                                 unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                                unselectedTextColor = drawerContentColor,
+                                                unselectedIconColor = drawerContentColor
                                             ),
                                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                         )
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Importar Planilha do Dispositivo", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = drawerContentColor) },
+                                            label = { Text("Importar Planilha do Dispositivo", fontSize = 13.sp, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -373,16 +382,16 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationDrawerItemDefaults.colors(
                                                 unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                                unselectedTextColor = drawerContentColor,
+                                                unselectedIconColor = drawerContentColor
                                             ),
                                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                         )
                                         Spacer(modifier = Modifier.weight(1f))
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
+                                        HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Mudar Tema", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            icon = { Icon(Icons.Default.Palette, contentDescription = null, tint = drawerContentColor) },
+                                            label = { Text("Mudar Tema", fontSize = 13.sp, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -390,14 +399,14 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationDrawerItemDefaults.colors(
                                                 unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                                unselectedTextColor = drawerContentColor,
+                                                unselectedIconColor = drawerContentColor
                                             ),
                                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                         )
                                         NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.Insights, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer) },
-                                            label = { Text("Verificar atualizações", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSecondaryContainer) },
+                                            icon = { Icon(Icons.Default.Insights, contentDescription = null, tint = drawerContentColor) },
+                                            label = { Text("Verificar atualizações", fontSize = 13.sp, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -405,8 +414,8 @@ class MainActivity : ComponentActivity() {
                                             },
                                             colors = NavigationDrawerItemDefaults.colors(
                                                 unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                                unselectedTextColor = drawerContentColor,
+                                                unselectedIconColor = drawerContentColor
                                             ),
                                             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                         )
