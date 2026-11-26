@@ -184,12 +184,12 @@ fun ClientesScreen(
                         cliente = clienteResumo,
                         formatador = formatador,
                         onCobrarTudo = {
-                            val vendasPendentes = clienteResumo.vendas.filter { !it.isQuitado }
-                            val pecas = vendasPendentes.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
+                            val pecas = clienteResumo.vendas.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
                             viewModel.cobrarWhatsApp(
                                 context = context,
                                 cliente = clienteResumo.nome,
                                 valorPendente = clienteResumo.saldoDevedor,
+                                valorPago = clienteResumo.totalPago,
                                 itens = pecas
                             )
                         },

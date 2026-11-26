@@ -419,16 +419,21 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun cobrarWhatsApp(context: Context, cliente: String, valorPendente: Double, itens: List<String> = emptyList()) {
+    fun cobrarWhatsApp(context: Context, cliente: String, valorPendente: Double, valorPago: Double = 0.0, itens: List<String> = emptyList()) {
         val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
-        val valorFormatado = formatador.format(valorPendente)
+        val valorPendenteFormatado = formatador.format(valorPendente)
+        val valorPagoFormatado = formatador.format(valorPago)
 
         val detalheItens = if (itens.isNotEmpty()) {
             "\nItens:\n" + itens.joinToString("\n") { "• $it" }
         } else ""
 
+        val infoPago = if (valorPago > 0.001) "\nValor já pago: $valorPagoFormatado" else ""
+
         val mensagem = """
-            Olá $cliente, tudo bem? 😊 Passando para lembrar do seu saldo pendente de $valorFormatado.$detalheItens
+            Olá $cliente, tudo bem? 😊 Passando para lembrar do seu saldo pendente:
+            Saldo pendente: $valorPendenteFormatado.$detalheItens$infoPago
+            
             Qualquer dúvida me avise! ❤️
         """.trimIndent()
 

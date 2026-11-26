@@ -28,9 +28,11 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.NightsStay
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -306,7 +308,7 @@ class MainActivity : ComponentActivity() {
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 24.dp, vertical = 20.dp),
+                                                .padding(horizontal = 12.dp, vertical = 20.dp),
                                             horizontalArrangement = Arrangement.Start,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
@@ -341,7 +343,7 @@ class MainActivity : ComponentActivity() {
                                                 unselectedTextColor = drawerContentColor,
                                                 unselectedIconColor = drawerContentColor
                                             ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                         )
                                         HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
                                         NavigationDrawerItem(
@@ -357,7 +359,7 @@ class MainActivity : ComponentActivity() {
                                                 unselectedTextColor = drawerContentColor,
                                                 unselectedIconColor = drawerContentColor
                                             ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                         )
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.FileDownload, contentDescription = null, tint = drawerContentColor) },
@@ -372,7 +374,7 @@ class MainActivity : ComponentActivity() {
                                                 unselectedTextColor = drawerContentColor,
                                                 unselectedIconColor = drawerContentColor
                                             ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                         )
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = drawerContentColor) },
@@ -387,25 +389,51 @@ class MainActivity : ComponentActivity() {
                                                 unselectedTextColor = drawerContentColor,
                                                 unselectedIconColor = drawerContentColor
                                             ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                         )
                                         Spacer(modifier = Modifier.weight(1f))
                                         HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
-                                        NavigationDrawerItem(
-                                            icon = { Icon(Icons.Default.Palette, contentDescription = null, tint = drawerContentColor) },
-                                            label = { Text("Mudar Tema", fontSize = 13.sp, color = drawerContentColor) },
-                                            selected = false,
+                                        Surface(
                                             onClick = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                showTemaDialog = true
+                                                val novoModo = if (modoTema == TemaModo.ESCURO) TemaModo.CLARO else TemaModo.ESCURO
+                                                viewModel.setModoTema(context, novoModo)
                                             },
-                                            colors = NavigationDrawerItemDefaults.colors(
-                                                unselectedContainerColor = Color.Transparent,
-                                                unselectedTextColor = drawerContentColor,
-                                                unselectedIconColor = drawerContentColor
-                                            ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                        )
+                                            color = Color.Transparent,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = if (modoTema == TemaModo.ESCURO) Icons.Default.NightsStay else Icons.Default.WbSunny,
+                                                        contentDescription = null,
+                                                        tint = drawerContentColor
+                                                    )
+                                                    Text(
+                                                        text = if (modoTema == TemaModo.ESCURO) "Modo Escuro" else "Modo Claro",
+                                                        fontSize = 13.sp,
+                                                        color = drawerContentColor
+                                                    )
+                                                }
+                                                Switch(
+                                                    checked = modoTema == TemaModo.ESCURO,
+                                                    onCheckedChange = { checked ->
+                                                        val novoModo = if (checked) TemaModo.ESCURO else TemaModo.CLARO
+                                                        viewModel.setModoTema(context, novoModo)
+                                                    }
+                                                )
+                                            }
+                                        }
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.Insights, contentDescription = null, tint = drawerContentColor) },
                                             label = { Text("Verificar atualizações", fontSize = 13.sp, color = drawerContentColor) },
@@ -419,7 +447,7 @@ class MainActivity : ComponentActivity() {
                                                 unselectedTextColor = drawerContentColor,
                                                 unselectedIconColor = drawerContentColor
                                             ),
-                                            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
