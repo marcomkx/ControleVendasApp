@@ -183,26 +183,7 @@ fun ClientesScreen(
                     ClienteCard(
                         cliente = clienteResumo,
                         formatador = formatador,
-                        onCobrarTudo = {
-                            val pecas = clienteResumo.vendas.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
-                            viewModel.cobrarWhatsApp(
-                                context = context,
-                                cliente = clienteResumo.nome,
-                                valorPendente = clienteResumo.saldoDevedor,
-                                valorPago = clienteResumo.totalPago,
-                                itens = pecas
-                            )
-                        },
                         onBaixa = { clienteParaPagamento = clienteResumo },
-                        onCompartilhar = {
-                            val pecas = clienteResumo.vendas.map { "${it.produto} - ${formatador.format(it.valorPeca)}" }
-                            viewModel.compartilharItensWhatsApp(
-                                context = context,
-                                cliente = clienteResumo.nome,
-                                itens = pecas,
-                                valorTotal = clienteResumo.totalComprado
-                            )
-                        },
                         onCompartilharCard = {
                             viewModel.compartilharCardCliente(context, clienteResumo)
                         },
@@ -265,9 +246,7 @@ fun ClientesScreen(
 fun ClienteCard(
     cliente: ClienteResumo,
     formatador: NumberFormat,
-    onCobrarTudo: () -> Unit,
     onBaixa: () -> Unit,
-    onCompartilhar: () -> Unit,
     onCompartilharCard: () -> Unit,
     onEditarVenda: (List<Venda>) -> Unit,
     onExcluirVenda: (Venda) -> Unit,
@@ -318,7 +297,7 @@ fun ClienteCard(
                         Icon(
                             Icons.Default.Share,
                             contentDescription = "Compartilhar Imagem do Card",
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = Color(0xFF25D366),
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -337,57 +316,15 @@ fun ClienteCard(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Button(
-                    onClick = onCompartilhar,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+            if (cliente.saldoDevedor > 0.001) {
+                FilledTonalButton(
+                    onClick = onBaixa,
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text("Compartilhar", color = Color.White, fontSize = 11.sp, maxLines = 1)
-                }
-
-                if (cliente.saldoDevedor > 0.001) {
-                    Button(
-                        onClick = onCobrarTudo,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("Cobrar", color = Color.White, fontSize = 11.sp, maxLines = 1)
-                    }
-
-                    FilledTonalButton(
-                        onClick = onBaixa,
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 4.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(13.dp))
-                        Spacer(modifier = Modifier.width(3.dp))
-                        Text("Baixa", fontSize = 11.sp, maxLines = 1)
-                    }
-                } else {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color(0xFFE8F5E9),
-                        modifier = Modifier.weight(2f)
-                    ) {
-                        Text(
-                            text = "Sem débitos",
-                            color = Color(0xFF2E7D32),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                        )
-                    }
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Dar Baixa", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 

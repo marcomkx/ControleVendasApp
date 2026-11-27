@@ -372,7 +372,7 @@ object ClienteCardImageUtils {
             }
 
             withContext(Dispatchers.Main) {
-                dispararIntentCompartilhamento(context, imageUri, cliente)
+                dispararIntentCompartilhamento(context, imageUri)
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -382,19 +382,10 @@ object ClienteCardImageUtils {
         }
     }
 
-    private fun dispararIntentCompartilhamento(context: Context, imageUri: Uri, cliente: ClienteResumo) {
-        val formatador = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
-        val infoPendente = if (cliente.saldoDevedor > 0.001) {
-            " (Saldo pendente: ${formatador.format(cliente.saldoDevedor)})"
-        } else {
-            " (100% Quitado 🎉)"
-        }
-        val mensagemLegenda = "Olá ${cliente.nome}! Segue o resumo atualizado das suas compras$infoPendente. Qualquer dúvida estou à disposição! ❤️"
-
+    private fun dispararIntentCompartilhamento(context: Context, imageUri: Uri) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, imageUri)
-            putExtra(Intent.EXTRA_TEXT, mensagemLegenda)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             `package` = "com.whatsapp"
         }
@@ -419,7 +410,6 @@ object ClienteCardImageUtils {
             val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "image/png"
                 putExtra(Intent.EXTRA_STREAM, imageUri)
-                putExtra(Intent.EXTRA_TEXT, mensagemLegenda)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             val chooser = Intent.createChooser(fallbackIntent, "Compartilhar card do cliente")
