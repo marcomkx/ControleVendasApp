@@ -77,6 +77,9 @@ interface VendaDao {
     @Query("UPDATE vendas SET produto = :destino WHERE LOWER(TRIM(produto)) = LOWER(TRIM(:origem))")
     suspend fun mesclarProdutos(origem: String, destino: String)
 
+    @Query("UPDATE vendas SET mesReferencia = UPPER(TRIM(:novoMes)) WHERE LOWER(TRIM(mesReferencia)) = LOWER(TRIM(:antigoMes))")
+    suspend fun renomearMes(antigoMes: String, novoMes: String)
+
     @Query("DELETE FROM vendas WHERE LOWER(TRIM(mesReferencia)) = LOWER(TRIM(:mes))")
     suspend fun deleteVendasPorMes(mes: String)
 

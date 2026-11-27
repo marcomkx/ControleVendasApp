@@ -34,6 +34,8 @@ class VendaRepository(private val vendaDao: VendaDao) {
 
     suspend fun mesclarProdutos(origem: String, destino: String) = vendaDao.mesclarProdutos(origem, destino)
 
+    suspend fun renomearMes(antigo: String, novo: String) = vendaDao.renomearMes(antigo, novo)
+
     suspend fun deleteVendasPorMes(mes: String) = vendaDao.deleteVendasPorMes(mes)
 
     suspend fun deleteAll() = vendaDao.deleteAll()

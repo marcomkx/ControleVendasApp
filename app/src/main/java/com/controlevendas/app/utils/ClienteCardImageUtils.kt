@@ -35,7 +35,7 @@ object ClienteCardImageUtils {
         val clientInfoHeight = 85f
         val summaryBoxHeight = 115f
         val sectionTitleHeight = 55f
-        val itemHeight = 56f
+        val itemHeight = 48f
         val itemsTotalHeight = (cliente.vendas.size.coerceAtLeast(1) * itemHeight)
         val footerHeight = 110f
         val cardHeight = (headerHeight + clientInfoHeight + summaryBoxHeight + sectionTitleHeight + itemsTotalHeight + footerHeight).toInt()
@@ -216,11 +216,6 @@ object ClienteCardImageUtils {
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.RIGHT
         }
-        val itemStatusPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 19f
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textAlign = Paint.Align.RIGHT
-        }
 
         if (cliente.vendas.isEmpty()) {
             val emptyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -233,21 +228,17 @@ object ClienteCardImageUtils {
         } else {
             cliente.vendas.forEachIndexed { index, venda ->
                 val rowTop = currentY
-                val rowBottom = currentY + itemHeight - 8f
+                val rowBottom = currentY + itemHeight - 6f
 
                 // Fundo alternado suave
                 if (index % 2 == 1) {
                     rowBgPaint.color = Color.parseColor("#FAFAFA")
-                    canvas.drawRoundRect(RectF(paddingX - 10f, rowTop - 6f, cardWidth - paddingX + 10f, rowBottom + 2f), 10f, 10f, rowBgPaint)
+                    canvas.drawRoundRect(RectF(paddingX - 10f, rowTop - 4f, cardWidth - paddingX + 10f, rowBottom + 2f), 10f, 10f, rowBgPaint)
                 }
 
-                val statusTexto = if (venda.isQuitado) "Quitado" else "Falta ${formatador.format(venda.saldoDevedor)}"
-                itemStatusPaint.color = if (venda.isQuitado) Color.parseColor("#2E7D32") else Color.parseColor("#C2185B")
-
-                val statusWidth = itemStatusPaint.measureText(statusTexto)
-                val valorWidth = itemValorPaint.measureText(formatador.format(venda.valorPeca))
-                val rightSpaceNeeded = maxOf(statusWidth, valorWidth) + 30f
-                val maxProdutoWidth = cardWidth - (paddingX * 2) - rightSpaceNeeded
+                val valorTexto = formatador.format(venda.valorPeca)
+                val valorWidth = itemValorPaint.measureText(valorTexto)
+                val maxProdutoWidth = cardWidth - (paddingX * 2) - valorWidth - 24f
 
                 // Texto do produto com mês
                 val descricaoCompleta = "• ${venda.produto} (${venda.mesReferencia})"
@@ -258,9 +249,8 @@ object ClienteCardImageUtils {
                     TextUtils.TruncateAt.END
                 ).toString()
 
-                canvas.drawText(descricaoTruncada, paddingX, currentY + 18f, itemTitlePaint)
-                canvas.drawText(formatador.format(venda.valorPeca), cardWidth - paddingX, currentY + 14f, itemValorPaint)
-                canvas.drawText(statusTexto, cardWidth - paddingX, currentY + 36f, itemStatusPaint)
+                canvas.drawText(descricaoTruncada, paddingX, currentY + 26f, itemTitlePaint)
+                canvas.drawText(valorTexto, cardWidth - paddingX, currentY + 26f, itemValorPaint)
 
                 currentY += itemHeight
             }
