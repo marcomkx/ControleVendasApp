@@ -469,6 +469,12 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
             Toast.makeText(context, "WhatsApp não instalado ou erro ao abrir", Toast.LENGTH_SHORT).show()
         }
     }
+
+    fun compartilharCardCliente(context: Context, cliente: ClienteResumo) {
+        viewModelScope.launch {
+            com.controlevendas.app.utils.ClienteCardImageUtils.gerarECompartilharCard(context, cliente)
+        }
+    }
 }
 
 class VendasViewModelFactory(private val repository: VendaRepository) : ViewModelProvider.Factory {

@@ -203,6 +203,9 @@ fun ClientesScreen(
                                 valorTotal = clienteResumo.totalComprado
                             )
                         },
+                        onCompartilharCard = {
+                            viewModel.compartilharCardCliente(context, clienteResumo)
+                        },
                         onEditarVenda = onEditarVenda,
                         onExcluirVenda = onExcluirVenda,
                         onExcluirCliente = { clienteParaExcluir = clienteResumo }
@@ -265,6 +268,7 @@ fun ClienteCard(
     onCobrarTudo: () -> Unit,
     onBaixa: () -> Unit,
     onCompartilhar: () -> Unit,
+    onCompartilharCard: () -> Unit,
     onEditarVenda: (List<Venda>) -> Unit,
     onExcluirVenda: (Venda) -> Unit,
     onExcluirCliente: () -> Unit
@@ -302,6 +306,18 @@ fun ClienteCard(
                         Icon(
                             Icons.Default.Edit,
                             contentDescription = "Editar Venda",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onCompartilharCard,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Share,
+                            contentDescription = "Compartilhar Imagem do Card",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
