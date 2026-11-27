@@ -173,33 +173,14 @@ fun DashboardScreen(viewModel: VendasViewModel) {
             }
         }
 
-        // Gráfico 2: Comparação Mês Passado vs Mês Atual
+        // Gráfico 2: Comparação de Lucro entre Meses
         if (vendasPorMes.isNotEmpty()) {
             item {
                 GraficoComparacaoMeses(
                     vendasPorMes = vendasPorMes,
+                    filtroMes = filtroMes,
                     formatador = formatador
                 )
-            }
-        }
-
-        // Dica de Gestão
-        item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Dica de Gestão:", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Text(
-                        "Para consultar ou registrar recebimentos individuais, acerte os pagamentos na aba 'Vendas' ou verifique o saldo consolidado devedor na aba 'Clientes'.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
         }
 
@@ -216,12 +197,19 @@ fun DashboardScreen(viewModel: VendasViewModel) {
 @Composable
 fun GraficoComparacaoMeses(
     vendasPorMes: List<ResumoMes>,
+    filtroMes: String?,
     formatador: NumberFormat
 ) {
     if (vendasPorMes.isEmpty()) return
 
-    val mesAtual = vendasPorMes.getOrNull(0)
-    val mesPassado = vendasPorMes.getOrNull(1)
+    val idx = if (filtroMes != null && filtroMes != "Todos") {
+        vendasPorMes.indexOfFirst { it.mes.equals(filtroMes, ignoreCase = true) }.takeIf { it >= 0 } ?: 0
+    } else {
+        0
+    }
+
+    val mesAtual = vendasPorMes.getOrNull(idx)
+    val mesPassado = vendasPorMes.getOrNull(idx + 1)
 
     val surfaceColor = MaterialTheme.colorScheme.surfaceVariant
     val onSurface = MaterialTheme.colorScheme.onSurface
@@ -229,9 +217,9 @@ fun GraficoComparacaoMeses(
     val secondaryColor = MaterialTheme.colorScheme.secondary
 
     val animProgress = remember { Animatable(0f) }
-    LaunchedEffect(vendasPorMes) {
+    LaunchedEffect(filtroMes, mesAtual?.mes, mesPassado?.mes, mesAtual?.totalLucro, mesPassado?.totalLucro) {
         animProgress.snapTo(0f)
-        animProgress.animateTo(1f, animationSpec = tween(durationMillis = 1000))
+        animProgress.animateTo(1f, animationSpec = tween(durationMillis = 800))
     }
 
     Card(
@@ -242,8 +230,13 @@ fun GraficoComparacaoMeses(
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            val titulo = if (filtroMes != null && filtroMes != "Todos") {
+                "Comparação de Lucro: Mês Selecionado X Anterior"
+            } else {
+                "Comparação de Lucro: Mês Atual X Passado"
+            }
             Text(
-                text = "Comparação: Mês Passado vs Mês Atual",
+                text = titulo,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = onSurface
@@ -251,17 +244,16 @@ fun GraficoComparacaoMeses(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (mesPassado == null) {
+                val nomeAtual = (mesAtual?.mes?.substringBefore("/")?.trim()?.replaceFirstChar { it.uppercaseChar() } ?: "") + "/" + (mesAtual?.mes?.substringAfter("/")?.trim() ?: "")
                 Text(
-                    text = "Cadastre vendas em mais de um mês para visualizar a comparação entre o mês passado e o mês atual.",
+                    text = "Não há mês anterior cadastrado para comparar com $nomeAtual.",
                     fontSize = 12.sp,
                     color = onSurface.copy(alpha = 0.7f)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 if (mesAtual != null) {
-                    val nomeAtual = mesAtual.mes.substringBefore("/").trim().replaceFirstChar { it.uppercaseChar() }
-                    val anoAtual = mesAtual.mes.substringAfter("/").trim()
                     Text(
-                        text = "$nomeAtual/$anoAtual (Atual): ${formatador.format(mesAtual.totalVendido)}",
+                        text = "$nomeAtual (Lucro): ${formatador.format(mesAtual.totalLucro)}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp,
                         color = primaryColor
@@ -277,8 +269,10 @@ fun GraficoComparacaoMeses(
                     val cornerR = 8.dp.toPx()
                     val labelPx = 95.dp.toPx()
                     val barArea = size.width - labelPx - 8.dp.toPx()
-                    
-                    val maxV = maxOf(mesAtual?.totalVendido ?: 0.0, mesPassado.totalVendido, 1.0)
+
+                    val lucroAtual = mesAtual?.totalLucro ?: 0.0
+                    val lucroPassado = mesPassado.totalLucro
+                    val maxV = maxOf(lucroAtual, lucroPassado, 1.0)
 
                     val nomePassado = mesPassado.mes.substringBefore("/").trim().replaceFirstChar { it.uppercaseChar() } + "/" + mesPassado.mes.substringAfter("/").trim()
                     val nomeAtual = (mesAtual?.mes?.substringBefore("/")?.trim()?.replaceFirstChar { it.uppercaseChar() } ?: "") + "/" + (mesAtual?.mes?.substringAfter("/")?.trim() ?: "")
@@ -336,10 +330,12 @@ fun GraficoComparacaoMeses(
                         }
                     }
 
-                    // Linha 1: Mês Passado
+                    // Linha 1: Mês Atual / Mais Recente (Topo)
                     val y1 = 0f
+                    val ratio1 = (lucroAtual / maxV).coerceIn(0.0, 1.0)
+
                     drawContext.canvas.nativeCanvas.drawText(
-                        nomePassado,
+                        nomeAtual,
                         0f,
                         y1 + barH / 2f + 5.dp.toPx(),
                         android.graphics.Paint().apply {
@@ -350,29 +346,28 @@ fun GraficoComparacaoMeses(
                         }
                     )
                     drawRoundRect(
-                        color = secondaryColor.copy(alpha = 0.12f),
+                        color = primaryColor.copy(alpha = 0.12f),
                         topLeft = Offset(labelPx, y1),
                         size = Size(barArea, barH),
                         cornerRadius = CornerRadius(cornerR)
                     )
-                    val ratio1 = (mesPassado.totalVendido / maxV).coerceIn(0.0, 1.0)
                     val w1 = (barArea * ratio1 * animProgress.value).toFloat()
                     if (w1 > cornerR) {
                         drawRoundRect(
-                            color = secondaryColor.copy(alpha = 0.85f),
+                            color = primaryColor.copy(alpha = 0.85f),
                             topLeft = Offset(labelPx, y1),
                             size = Size(w1, barH),
                             cornerRadius = CornerRadius(cornerR)
                         )
                     }
-                    drawBarValue(drawContext.canvas.nativeCanvas, mesPassado.totalVendido, w1, y1, secondaryColor)
+                    drawBarValue(drawContext.canvas.nativeCanvas, lucroAtual, w1, y1, primaryColor)
 
-                    // Linha 2: Mês Atual
+                    // Linha 2: Mês Anterior / Passado (Baixo)
                     val y2 = barH + 20.dp.toPx()
-                    val ratio2 = if (mesAtual != null) (mesAtual.totalVendido / maxV).coerceIn(0.0, 1.0) else 0.0
+                    val ratio2 = (lucroPassado / maxV).coerceIn(0.0, 1.0)
 
                     drawContext.canvas.nativeCanvas.drawText(
-                        nomeAtual,
+                        nomePassado,
                         0f,
                         y2 + barH / 2f + 5.dp.toPx(),
                         android.graphics.Paint().apply {
@@ -383,7 +378,7 @@ fun GraficoComparacaoMeses(
                         }
                     )
                     drawRoundRect(
-                        color = primaryColor.copy(alpha = 0.12f),
+                        color = secondaryColor.copy(alpha = 0.12f),
                         topLeft = Offset(labelPx, y2),
                         size = Size(barArea, barH),
                         cornerRadius = CornerRadius(cornerR)
@@ -391,13 +386,13 @@ fun GraficoComparacaoMeses(
                     val w2 = (barArea * ratio2 * animProgress.value).toFloat()
                     if (w2 > cornerR) {
                         drawRoundRect(
-                            color = primaryColor.copy(alpha = 0.85f),
+                            color = secondaryColor.copy(alpha = 0.85f),
                             topLeft = Offset(labelPx, y2),
                             size = Size(w2, barH),
                             cornerRadius = CornerRadius(cornerR)
                         )
                     }
-                    drawBarValue(drawContext.canvas.nativeCanvas, mesAtual?.totalVendido ?: 0.0, w2, y2, primaryColor)
+                    drawBarValue(drawContext.canvas.nativeCanvas, lucroPassado, w2, y2, secondaryColor)
                 }
             }
         }
@@ -439,7 +434,7 @@ fun GraficoDonutVendidoRecebido(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Vendas vs Recebimentos",
+                text = "Vendas X Recebimentos",
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = onSurface

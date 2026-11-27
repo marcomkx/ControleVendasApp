@@ -25,7 +25,8 @@ data class ResumoMes(
     val mes: String,
     val totalVendido: Double,
     val totalPago: Double,
-    val totalPendente: Double
+    val totalPendente: Double,
+    val totalLucro: Double = 0.0
 )
 
 data class ResumoMetricas(
@@ -350,6 +351,22 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
         }
     }
 
+    fun renomearMes(antigoMes: String, novoMes: String) {
+        viewModelScope.launch {
+            val novo = novoMes.trim().uppercase()
+            val antigo = antigoMes.trim().uppercase()
+            if (novo.isNotBlank() && novo != antigo) {
+                repository.renomearMes(antigo, novo)
+                if (_filtroMes.value?.equals(antigo, ignoreCase = true) == true) {
+                    _filtroMes.value = novo
+                }
+                if (_filtroClientesMes.value?.equals(antigo, ignoreCase = true) == true) {
+                    _filtroClientesMes.value = novo
+                }
+            }
+        }
+    }
+
     fun registrarPagamentoCliente(clienteNome: String, valorRecebido: Double) {
         viewModelScope.launch {
             val clienteResumo = clientesAgrupados.value.find { it.nome.equals(clienteNome, ignoreCase = true) }
@@ -396,13 +413,16 @@ class VendasViewModel(private val repository: VendaRepository) : ViewModel() {
     // Dados para o gráfico: resumo por mês (todos os meses, sem filtro) — mais recente primeiro
     val vendasPorMes: StateFlow<List<ResumoMes>> = todasVendas
         .map { vendas ->
-            vendas.groupBy { it.mesReferencia }
+            vendas
+                .filter { it.cliente != "— MÊS EM BRANCO —" }
+                .groupBy { it.mesReferencia }
                 .map { (mes, lista) ->
                     ResumoMes(
                         mes = mes,
                         totalVendido = lista.sumOf { it.valorPeca },
                         totalPago = lista.sumOf { it.valorPago },
-                        totalPendente = lista.sumOf { it.saldoDevedor }
+                        totalPendente = lista.sumOf { it.saldoDevedor },
+                        totalLucro = lista.sumOf { it.lucro }
                     )
                 }
                 .sortedByDescending { resumo ->

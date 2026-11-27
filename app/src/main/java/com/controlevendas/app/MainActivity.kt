@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Group
@@ -127,6 +128,8 @@ class MainActivity : ComponentActivity() {
                 var showGerenciarMesesDialog by remember { mutableStateOf(false) }
                 var showCriarMesDialog by remember { mutableStateOf(false) }
                 var novoMesInput by remember { mutableStateOf("") }
+                var mesParaEditar by remember { mutableStateOf<String?>(null) }
+                var editarMesInput by remember { mutableStateOf("") }
                 var mesParaExcluir by remember { mutableStateOf<String?>(null) }
                 var mesParaExcluirSegundaEtapa by remember { mutableStateOf<String?>(null) }
 
@@ -332,7 +335,7 @@ class MainActivity : ComponentActivity() {
                                         HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f))
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.CalendarMonth, contentDescription = null, tint = drawerContentColor) },
-                                            label = { Text("Gerenciar Meses", fontSize = 13.sp, color = drawerContentColor) },
+                                            label = { Text("Gerenciar Meses", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -348,7 +351,7 @@ class MainActivity : ComponentActivity() {
                                         HorizontalDivider(color = drawerContentColor.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 8.dp))
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.Share, contentDescription = null, tint = drawerContentColor) },
-                                            label = { Text("Exportar para Google Planilhas", fontSize = 13.sp, color = drawerContentColor) },
+                                            label = { Text("Exportar para Google Planilhas", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -363,7 +366,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.FileDownload, contentDescription = null, tint = drawerContentColor) },
-                                            label = { Text("Salvar Planilha (.xlsx)", fontSize = 13.sp, color = drawerContentColor) },
+                                            label = { Text("Salvar Planilha (.xlsx)", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -378,7 +381,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.FileUpload, contentDescription = null, tint = drawerContentColor) },
-                                            label = { Text("Importar Planilha do Dispositivo", fontSize = 13.sp, color = drawerContentColor) },
+                                            label = { Text("Importar Planilha do Dispositivo", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -422,6 +425,7 @@ class MainActivity : ComponentActivity() {
                                                     Text(
                                                         text = if (modoTema == TemaModo.ESCURO) "Modo Escuro" else "Modo Claro",
                                                         fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Bold,
                                                         color = drawerContentColor
                                                     )
                                                 }
@@ -436,7 +440,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                         NavigationDrawerItem(
                                             icon = { Icon(Icons.Default.Insights, contentDescription = null, tint = drawerContentColor) },
-                                            label = { Text("Verificar atualizações", fontSize = 13.sp, color = drawerContentColor) },
+                                            label = { Text("Verificar atualizações", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = drawerContentColor) },
                                             selected = false,
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
@@ -597,16 +601,28 @@ class MainActivity : ComponentActivity() {
                                                     horizontalArrangement = Arrangement.SpaceBetween,
                                                     verticalAlignment = Alignment.CenterVertically
                                                 ) {
-                                                    Text(mes, fontWeight = FontWeight.Medium, fontSize = 15.sp)
-                                                    IconButton(onClick = {
-                                                        showGerenciarMesesDialog = false
-                                                        mesParaExcluir = mes
-                                                    }) {
-                                                        Icon(
-                                                            Icons.Default.DeleteOutline,
-                                                            contentDescription = "Apagar $mes",
-                                                            tint = MaterialTheme.colorScheme.error
-                                                        )
+                                                    Text(mes, fontWeight = FontWeight.Medium, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        IconButton(onClick = {
+                                                            mesParaEditar = mes
+                                                            editarMesInput = mes
+                                                        }) {
+                                                            Icon(
+                                                                Icons.Default.Edit,
+                                                                contentDescription = "Editar $mes",
+                                                                tint = MaterialTheme.colorScheme.primary
+                                                            )
+                                                        }
+                                                        IconButton(onClick = {
+                                                            showGerenciarMesesDialog = false
+                                                            mesParaExcluir = mes
+                                                        }) {
+                                                            Icon(
+                                                                Icons.Default.DeleteOutline,
+                                                                contentDescription = "Apagar $mes",
+                                                                tint = MaterialTheme.colorScheme.error
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
@@ -662,6 +678,53 @@ class MainActivity : ComponentActivity() {
                             },
                             dismissButton = {
                                 TextButton(onClick = { showCriarMesDialog = false }) {
+                                    Text("Cancelar")
+                                }
+                            }
+                        )
+                    }
+
+                    // Diálogo para Editar/Renomear Mês
+                    if (mesParaEditar != null) {
+                        AlertDialog(
+                            onDismissRequest = { mesParaEditar = null },
+                            title = { Text("✏️ Renomear Mês") },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text("Digite o novo nome do mês. Todas as vendas deste mês serão mantidas intactas:")
+                                    OutlinedTextField(
+                                        value = editarMesInput,
+                                        onValueChange = { editarMesInput = it },
+                                        singleLine = true,
+                                        label = { Text("Mês/Ano") },
+                                        placeholder = { Text("JANEIRO/2026") },
+                                        supportingText = {
+                                            if (editarMesInput.isNotBlank() && !editarMesInput.contains("/")) {
+                                                Text("É obrigatório o uso da barra (/)", color = MaterialTheme.colorScheme.error)
+                                            }
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = {
+                                        val novo = editarMesInput.trim().uppercase()
+                                        val antigo = mesParaEditar!!
+                                        if (novo.isNotBlank() && novo.contains("/")) {
+                                            viewModel.renomearMes(antigo, novo)
+                                            mesParaEditar = null
+                                            Toast.makeText(context, "Mês renomeado com sucesso!", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    enabled = editarMesInput.isNotBlank() && editarMesInput.contains("/") && editarMesInput.trim().uppercase() != mesParaEditar?.uppercase()
+                                ) {
+                                    Text("Salvar")
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { mesParaEditar = null }) {
                                     Text("Cancelar")
                                 }
                             }
